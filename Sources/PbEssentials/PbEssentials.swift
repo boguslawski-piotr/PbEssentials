@@ -1,5 +1,5 @@
-import Foundation
-import AppKit
+
+// MARK: Debug tools
 
 public func dbg(_ items: Any..., function : String = #function, line : Int = #line) {
 #if DEBUG
