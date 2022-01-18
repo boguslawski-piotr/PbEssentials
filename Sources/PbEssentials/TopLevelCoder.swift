@@ -17,7 +17,7 @@ public extension TopLevelDecoder
             return try d.decode(type, from: from)
         }
         catch {
-            print(error)
+            dbg(error)
             throw error
         }
     }
@@ -33,7 +33,7 @@ public extension TopLevelEncoder
             return try e.encode(value)
         }
         catch {
-            print(error)
+            dbg(Self.self, error)
             throw error
         }
     }
