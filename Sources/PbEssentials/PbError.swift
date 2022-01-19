@@ -10,29 +10,12 @@ public class PbError : Error, LocalizedError
     public let what : String
     public let error : Error?
     
-    public var description : String {
-        return "\(when.shortWithTimeWithSeconds): \(what)"
-    }
-
-    public var shortDescription : String {
-        return "\(what)"
-    }
-    
-    public var errorDescription : String? {
-        description
-    }
-
-    public var shortErrorDescription : String? {
-        shortDescription
-    }
-
-    public var localizedDescription : String {
-        description
-    }
-
-    public var shortLocalizedDescription : String {
-        shortDescription
-    }
+    public var description : String { return "\(when.shortWithTimeWithSeconds): \(what)" }
+    public var shortDescription : String { return "\(what)" }
+    public var errorDescription : String? { description }
+    public var shortErrorDescription : String? { shortDescription }
+    public var localizedDescription : String { description }
+    public var shortLocalizedDescription : String { shortDescription }
 
     public init() {
         self.error = nil
