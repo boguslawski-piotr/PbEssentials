@@ -16,6 +16,8 @@ public class PbError : Error, LocalizedError
     public var shortErrorDescription : String? { shortDescription }
     public var localizedDescription : String { description }
     public var shortLocalizedDescription : String { shortDescription }
+    public var debugDescription : String? { description }
+    public var shortDebugDescription : String? { shortDescription }
 
     public init() {
         self.error = nil

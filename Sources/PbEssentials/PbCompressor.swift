@@ -2,18 +2,29 @@ import Foundation
 import System
 import AppleArchive
 
-public class PbCompressor
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
+open class PbCompressor
 {
-    public init(createFile atPath: String, compression: ArchiveCompression = .lzma, permissions: FilePermissions? = nil) throws {
+    public init(toFile atPath: String, compression: ArchiveCompression? = nil, permissions: FilePermissions? = nil) throws {
         outputStream = ArchiveByteStream.fileStream(
             path: FilePath(atPath),
             mode: .writeOnly,
             options: [.truncate, .create, .closeOnExec],
             permissions: permissions ?? FilePermissions(rawValue: 0o644))
-        guard outputStream != nil else { throw ArchiveError.ioError }
         try makeCompressAndEncodeStreams(compression)
     }
 
+    public init<Stream>(toStream stream : Stream, compression: ArchiveCompression? = nil) throws where Stream: AnyObject, Stream: ArchiveByteStreamProtocol {
+        outputStream = ArchiveByteStream.customStream(instance: stream)
+        try makeCompressAndEncodeStreams(compression)
+    }
+
+    @discardableResult
+    public func append(contentsOf url: URL, withName: String? = nil) throws -> PbCompressor {
+        let data = try Data(contentsOf: url)
+        return try append(data: data, withName: withName ?? url.lastPathComponent)
+    }
+    
     @discardableResult
     public func append(data: Data, withName: String? = nil) throws -> PbCompressor {
         guard encodeStream != nil else { throw ArchiveError.invalidValue }
@@ -25,11 +36,11 @@ public class PbCompressor
         header.append(.uint(  key: .init("TYP"), value: UInt64(ArchiveHeader.EntryType.regularFile.rawValue)))
         header.append(.blob(  key: .init("DAT"), size:  UInt64(data.count)))
 
-        try encodeStream?.writeHeader(header)
+        try encodeStream!.writeHeader(header)
         
         try data.withUnsafeBytes() { ptr in
             let rawBuffer = UnsafeRawBufferPointer(ptr)
-            try encodeStream?.writeBlob(key: .init("DAT"), from: rawBuffer)
+            try encodeStream!.writeBlob(key: .init("DAT"), from: rawBuffer)
         }
         
         return self
@@ -48,16 +59,19 @@ public class PbCompressor
         try? close()
     }
     
-    private var outputStream : ArchiveByteStream?
-    private var compressStream : ArchiveByteStream?
     private var encodeStream : ArchiveStream?
-    
-    private func makeCompressAndEncodeStreams(_ compression: ArchiveCompression) throws {
+    private var compressStream : ArchiveByteStream?
+    private var outputStream : ArchiveByteStream?
+
+    private func makeCompressAndEncodeStreams(_ compression: ArchiveCompression?) throws {
+        guard outputStream != nil else { throw ArchiveError.invalidValue }
+        let compression = compression ?? .lzma
+        
         compressStream = ArchiveByteStream.compressionStream(using: compression, writingTo: outputStream!)
-        guard compressStream != nil else { throw ArchiveError.ioError }
+        guard compressStream != nil else { throw ArchiveError.invalidValue }
         
         encodeStream = ArchiveStream.encodeStream(writingTo: compressStream!)
-        guard encodeStream != nil else { throw ArchiveError.ioError }
+        guard encodeStream != nil else { throw ArchiveError.invalidValue }
     }
 }
 

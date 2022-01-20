@@ -1,6 +1,7 @@
 import Foundation
 import AppleArchive
 
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
 public extension Data
 {
     typealias Compression = AppleArchive.ArchiveCompression
@@ -10,7 +11,7 @@ public extension Data
             return try write(to: url)
         }
         
-        try PbCompressor(createFile: url.path, compression: compression)
+        try PbCompressor(toFile: url.path, compression: compression)
             .append(data: self)
             .close()
     }
@@ -20,7 +21,7 @@ public extension Data
             try self.init(contentsOf: url)
         }
         else {
-            self = try PbDecompressor(openFile: url.path).read() ?? Data()
+            self = try PbDecompressor(fromFile: url.path).read() ?? Data()
         }
     }
 }

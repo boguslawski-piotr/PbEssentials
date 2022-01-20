@@ -1,19 +1,50 @@
 import Foundation
 import System
 
-// MARK: Debug tools
+// MARK: Logging tools
+
+public enum PbLogger {}
+
+private func processItem(_ item : Any) -> Any {
+    if let error = item as? Error {
+        return error.localizedDescription
+    }
+    return item
+}
 
 #if DEBUG
-public func dbg(_ items: Any..., function : String = #function, file : String = #file, line : Int = #line) {
-    let file = file.split(separator: "/").last ?? ""
+
+public func dbg(_ items: Any..., function : String = #function, file : String = #fileID, line : Int = #line) {
     print("DBG:", "\(file)(\(line)): \(function):", "", terminator: "")
     items.forEach() { item in print(item, "", terminator: "") }
     print(terminator: "\n")
 }
+
+public extension PbLogger
+{
+    static func log(_ items: Any..., function : String = #function, file : String = #fileID, line : Int = #line) {
+        print("LOG:", "\(file)(\(line)): \(function):", "", terminator: "")
+        items.forEach() { item in print(processItem(item), "", terminator: "") }
+        print(terminator: "\n")
+    }
+}
+
 #else
+
 @inlinable
 public func dbg(_ items: Any...) {}
+
+public extension ReleaseLogger
+{
+    @inlinable
+    static func log(_ items: Any..., function : String = #function) {
+        #warning("TODO: implement log for release builds")
+    }
+}
+
 #endif
+
+// MARK: Async / Await debug helpers
 
 public extension Task where Failure == Error
 {

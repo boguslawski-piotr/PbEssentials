@@ -2,6 +2,7 @@ import Foundation
 import System
 import AppleArchive
 
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
 public extension FileManager
 {
     typealias Compression = AppleArchive.ArchiveCompression
@@ -16,7 +17,7 @@ public extension FileManager
         }
         
         do {
-            try PbCompressor(createFile: path, compression: compression, permissions: attributesToFilePermissions(attr))
+            try PbCompressor(toFile: path, compression: compression, permissions: attributesToFilePermissions(attr))
                 .append(data: data ?? Data())
                 .close()
             return true
@@ -32,7 +33,7 @@ public extension FileManager
         }
         
         do {
-            return try PbDecompressor(openFile: path).read()
+            return try PbDecompressor(fromFile: path).read()
         }
         catch {
             return nil
