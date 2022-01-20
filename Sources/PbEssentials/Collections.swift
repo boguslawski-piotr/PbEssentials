@@ -22,15 +22,17 @@ public protocol ThrowingIteratorProtocol
 ///
 /// Usage:
 ///
-///     var sequence = ThrowingStream {
-///         /* code producing data */
+///     var sequence = ThrowingStream<T> {
+///         /* code producing data (elements of type T) */
 ///     }
+///
+/// full try/catch support:
 ///
 ///     while let element = try sequence.nextThrows() {
 ///         /* code consuming data */
 ///     }
 ///
-/// or
+/// handling errors manually:
 ///
 ///     for element in sequence {
 ///         /* code consuming data */
@@ -62,7 +64,7 @@ public struct ThrowingStream<Element, Failure> : ErrorReportingSequence, ErrorRe
         }
     }
 
-    public struct Iterator : IteratorProtocol, ThrowingIteratorProtocol
+    public struct Iterator : ErrorReportingIteratorProtocol, ThrowingIteratorProtocol
     {
         internal var stream : ThrowingStream<Element, Failure>
         public var lastError : Error? { stream.lastError }

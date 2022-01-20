@@ -3,7 +3,7 @@ import System
 import AppleArchive
 
 @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
-open class PbDecompressor : ErrorReportingSequence, AsyncSequence, ErrorReportingIteratorProtocol, ThrowingIteratorProtocol
+public class PbDecompressor : ErrorReportingSequence, AsyncSequence, ErrorReportingIteratorProtocol, ThrowingIteratorProtocol
 {
     public init(fromFile atPath: String, permissions: FilePermissions? = nil) throws {
         try makeInputFileStream(atPath, permissions ?? FilePermissions(rawValue: 0o644))
