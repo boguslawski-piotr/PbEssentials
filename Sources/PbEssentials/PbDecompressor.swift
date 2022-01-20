@@ -3,14 +3,10 @@ import System
 import AppleArchive
 
 @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
-open class PbDecompressor : Sequence, AsyncSequence, IteratorProtocol, ThrowingIteratorProtocol
+open class PbDecompressor : ErrorReportingSequence, AsyncSequence, ErrorReportingIteratorProtocol, ThrowingIteratorProtocol
 {
     public init(fromFile atPath: String, permissions: FilePermissions? = nil) throws {
-        inputStream = ArchiveByteStream.fileStream(
-            path: FilePath(atPath),
-            mode: .readOnly,
-            options: [.closeOnExec, .nonBlocking],
-            permissions: permissions ?? FilePermissions(rawValue: 0o644))
+        try makeInputFileStream(atPath, permissions ?? FilePermissions(rawValue: 0o644))
         try makeDecompressAndDecodeStreams()
     }
     
@@ -25,7 +21,7 @@ open class PbDecompressor : Sequence, AsyncSequence, IteratorProtocol, ThrowingI
 
     public func read(_ name: inout String) throws -> Data? {
         let data = try _next()
-        name = lastName
+        name = lastStringPatField
         return data
     }
 
@@ -47,7 +43,7 @@ open class PbDecompressor : Sequence, AsyncSequence, IteratorProtocol, ThrowingI
     
     public struct AsyncIterator : AsyncIteratorProtocol
     {
-        let decompressor : PbDecompressor
+        internal let decompressor : PbDecompressor
         public func next() async throws -> Element? {
             return try decompressor._next()
         }
@@ -81,25 +77,33 @@ open class PbDecompressor : Sequence, AsyncSequence, IteratorProtocol, ThrowingI
     private var decompressStream : ArchiveByteStream?
     private var decodeStream : ArchiveStream?
     
+    private func makeInputFileStream(_ atPath: String, _ permissions: FilePermissions) throws {
+        inputStream = ArchiveByteStream.fileStream(
+            path: FilePath(atPath),
+            mode: .readOnly,
+            options: [.closeOnExec, .nonBlocking],
+            permissions: permissions)
+    }
+    
     private func makeDecompressAndDecodeStreams() throws {
         guard inputStream != nil else {
-            throw ArchiveError.ioError
+            throw ArchiveError.invalidValue
         }
 
         decompressStream = ArchiveByteStream.decompressionStream(readingFrom: inputStream!)
         guard decompressStream != nil else {
             try close()
-            throw ArchiveError.ioError
+            throw ArchiveError.invalidValue
         }
         
         decodeStream = ArchiveStream.decodeStream(readingFrom: decompressStream!)
         guard decodeStream != nil else {
             try close()
-            throw ArchiveError.ioError
+            throw ArchiveError.invalidValue
         }
     }
     
-    private var lastName = ""
+    private var lastStringPatField = ""
     
     private func _next() throws -> Data? {
         guard let header = try decodeStream?.readHeader() else {
@@ -108,9 +112,9 @@ open class PbDecompressor : Sequence, AsyncSequence, IteratorProtocol, ThrowingI
         }
         
         let patField = header.field(forKey: .init("PAT"))
-        lastName = ""
+        lastStringPatField = ""
         if case .string(_, let name) = patField {
-            lastName = name
+            lastStringPatField = name
         }
 
         let datField = header.field(forKey: .init("DAT"))

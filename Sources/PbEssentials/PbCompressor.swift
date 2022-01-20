@@ -6,11 +6,7 @@ import AppleArchive
 open class PbCompressor
 {
     public init(toFile atPath: String, compression: ArchiveCompression? = nil, permissions: FilePermissions? = nil) throws {
-        outputStream = ArchiveByteStream.fileStream(
-            path: FilePath(atPath),
-            mode: .writeOnly,
-            options: [.truncate, .create, .closeOnExec],
-            permissions: permissions ?? FilePermissions(rawValue: 0o644))
+        try makeOutputFileStream(atPath, permissions ?? FilePermissions(rawValue: 0o644))
         try makeCompressAndEncodeStreams(compression)
     }
 
@@ -63,6 +59,14 @@ open class PbCompressor
     private var compressStream : ArchiveByteStream?
     private var outputStream : ArchiveByteStream?
 
+    private func makeOutputFileStream(_ atPath: String, _ permissions: FilePermissions) throws {
+        outputStream = ArchiveByteStream.fileStream(
+            path: FilePath(atPath),
+            mode: .writeOnly,
+            options: [.truncate, .create, .closeOnExec],
+            permissions: permissions)
+    }
+    
     private func makeCompressAndEncodeStreams(_ compression: ArchiveCompression?) throws {
         guard outputStream != nil else { throw ArchiveError.invalidValue }
         let compression = compression ?? .lzma
