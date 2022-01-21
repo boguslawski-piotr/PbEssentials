@@ -64,7 +64,7 @@ public final class PbMockupCipher : PbCipher
         return data
     }
     
-    public func decrypt<T>(itemOf type: T.Type, from data: Data) throws -> T? where T : Decodable {
+    public func decrypt<T>(itemOf type: T.Type, from data: Data) throws -> T where T : Decodable {
         var data = data
         data.enumerated().forEach { (i, _) in data[i] = ~data[i] }
         return try decoder.decode(type, from: data)
