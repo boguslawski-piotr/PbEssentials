@@ -44,6 +44,29 @@ public extension ReleaseLogger
 
 #endif
 
+// MARK: Cipher
+
+@available(*, deprecated, message: "Debug tool. Do NOT use in production code!")
+public final class PbMockupCipher : PbCipher
+{
+    public init() {}
+    
+    private lazy var encoder = JSONEncoder()
+    private lazy var decoder = JSONDecoder()
+    
+    public func encrypt<T>(_ item: T) throws -> Data where T : Encodable {
+        var data = try encoder.encode(item)
+        data.enumerated().forEach { (i, _) in data[i] = ~data[i] }
+        return data
+    }
+    
+    public func decrypt<T>(itemOf type: T.Type, from data: Data) throws -> T? where T : Decodable {
+        var data = data
+        data.enumerated().forEach { (i, _) in data[i] = ~data[i] }
+        return try decoder.decode(type, from: data)
+    }
+}
+
 // MARK: Async / Await debug helpers
 
 public extension Task where Failure == Error

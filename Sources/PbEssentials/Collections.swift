@@ -1,3 +1,7 @@
+/// Swift PbEssentials
+/// Copyright (c) Piotr Boguslawski
+/// MIT license, see License.md file for details.
+
 import Foundation
 
 public protocol ErrorReportingIteratorProtocol : IteratorProtocol
@@ -19,6 +23,7 @@ public protocol ThrowingIteratorProtocol
     mutating func nextThrows() throws -> Self.Element?
 }
 
+/// A synchronous sequence generated from an error-throwing closure.
 ///
 /// Usage:
 ///
@@ -46,22 +51,23 @@ public struct ThrowingStream<Element, Failure> : ErrorReportingSequence, ErrorRe
     private var produce : () throws -> Element?
     public private(set) var lastError : Error?
 
+    /// Constructs a synchronous throwing stream from a given element-producing closure `produce`.
     public init(unfolding produce: @escaping () throws -> Element?) where Failure == Error {
         self.produce = produce
     }
-    
+
     public mutating func nextThrows() throws -> Element? {
-        return try produce()
-    }
-    
-    public mutating func next() -> Element? {
         do {
-            return try nextThrows()
+            return try produce()
         }
         catch {
             lastError = error
-            return nil
+            throw error
         }
+    }
+    
+    public mutating func next() -> Element? {
+        return try? nextThrows()
     }
 
     public struct Iterator : ErrorReportingIteratorProtocol, ThrowingIteratorProtocol
