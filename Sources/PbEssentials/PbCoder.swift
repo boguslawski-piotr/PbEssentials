@@ -98,7 +98,15 @@ open class PropertyListCoder : PbCoderBase<PropertyListDecoder, PropertyListEnco
             if type.self == String.self {
                 return try decoder.decode(Box<String>.self, from: from).v as! T
             }
-            // TODO: Int, Bool, etc.
+            if type.self == Int.self {
+                return try decoder.decode(Box<Int>.self, from: from).v as! T
+            }
+            if type.self == Float.self {
+                return try decoder.decode(Box<Float>.self, from: from).v as! T
+            }
+            if type.self == Double.self {
+                return try decoder.decode(Box<Double>.self, from: from).v as! T
+            }
             return try decoder.decode(type, from: from)
         }
         catch {
@@ -113,7 +121,15 @@ open class PropertyListCoder : PbCoderBase<PropertyListDecoder, PropertyListEnco
             if let value = value as? String {
                 return try encoder.encode(Box<String>(v: value))
             }
-            // TODO: Int, Bool, etc.
+            if let value = value as? Int {
+                return try encoder.encode(Box<Int>(v: value))
+            }
+            if let value = value as? Float {
+                return try encoder.encode(Box<Float>(v: value))
+            }
+            if let value = value as? Double {
+                return try encoder.encode(Box<Double>(v: value))
+            }
             return try encoder.encode(value)
         }
         catch {
