@@ -55,19 +55,22 @@ public final class PbMockupCipher : PbCipher
 {
     public init() {}
     
-    private lazy var encoder = JSONEncoder()
-    private lazy var decoder = JSONDecoder()
+    private lazy var coder = JSONCoder()
+    
+    public func encrypt<T>(data: T) throws -> Data where T : DataProtocol {
+        Data(data)
+    }
     
     public func encrypt<T>(_ item: T) throws -> Data where T : Encodable {
-        var data = try encoder.encode(item)
-        data.enumerated().forEach { (i, _) in data[i] = ~data[i] }
-        return data
+        try coder.encode(item)
+    }
+    
+    public func decrypt<T>(data: T) throws -> Data where T: DataProtocol {
+        Data(data)
     }
     
     public func decrypt<T>(itemOf type: T.Type, from data: Data) throws -> T where T : Decodable {
-        var data = data
-        data.enumerated().forEach { (i, _) in data[i] = ~data[i] }
-        return try decoder.decode(type, from: data)
+        try coder.decode(type, from: data)
     }
 }
 
