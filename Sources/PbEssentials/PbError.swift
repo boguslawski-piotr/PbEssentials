@@ -2,6 +2,10 @@
 //  Created by Piotr Boguslawski on 08/12/2021.
 //
 
+/// Swift PbEssentials
+/// Copyright (c) Piotr Boguslawski
+/// MIT license, see License.md file for details.
+
 import Foundation
 
 public class PbError : Error, LocalizedError

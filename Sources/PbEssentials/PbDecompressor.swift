@@ -1,3 +1,7 @@
+/// Swift PbEssentials
+/// Copyright (c) Piotr Boguslawski
+/// MIT license, see License.md file for details.
+
 import Foundation
 import System
 import AppleArchive

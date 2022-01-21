@@ -1,6 +1,6 @@
-//
-//  Created by Piotr Boguslawski on 12/01/2022.
-//
+/// Swift PbEssentials
+/// Copyright (c) Piotr Boguslawski
+/// MIT license, see License.md file for details.
 
 import Foundation
 

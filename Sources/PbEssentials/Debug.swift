@@ -1,3 +1,7 @@
+/// Swift PbEssentials
+/// Copyright (c) Piotr Boguslawski
+/// MIT license, see License.md file for details.
+
 import Foundation
 import System
 
@@ -44,7 +48,7 @@ public extension ReleaseLogger
 
 #endif
 
-// MARK: Cipher
+// MARK: Mockup cipher
 
 @available(*, deprecated, message: "Debug tool. Do NOT use in production code!")
 public final class PbMockupCipher : PbCipher
@@ -67,7 +71,7 @@ public final class PbMockupCipher : PbCipher
     }
 }
 
-// MARK: Async / Await debug helpers
+// MARK: Async / Await helpers
 
 public extension Task where Failure == Error
 {
