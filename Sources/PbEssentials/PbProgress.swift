@@ -4,7 +4,6 @@
 
 import Foundation
 import Combine
-import PbEssentials
 
 public protocol PbProgress
 {

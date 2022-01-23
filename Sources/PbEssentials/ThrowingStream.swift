@@ -2,43 +2,24 @@
 /// Copyright (c) Piotr Boguslawski
 /// MIT license, see License.md file for details.
 
-import Foundation
-
-public protocol ErrorReportingIteratorProtocol : IteratorProtocol
-{
-    var lastError : Error? { get }
-}
-
-public protocol ErrorReportingSequence : Sequence
-{
-    var lastError : Error? { get }
-}
-
-public protocol ThrowingIteratorProtocol
-{
-    /// The type of element traversed by the iterator.
-    associatedtype Element
-    
-    /// Advances to the next element and returns it, or `nil` if no next element exists.
-    mutating func nextThrows() throws -> Self.Element?
-}
-
-/// A synchronous sequence generated from an error-throwing closure.
+/// A synchronous sequence generated from an error-throwing closure
+/// partialy compatible with AsyncThrowingStream but for synchronous
+/// environment.
 ///
-/// Usage:
+/// Example:
 ///
 ///     var sequence = ThrowingStream<T> {
-///         /* code producing data (elements of type T) */
+///         /* code producing data (elements of type T) or
+///            nil when sequence should end */
 ///     }
 ///
-/// full try/catch support:
-///
+///     // use thrownig mode
 ///     while let element = try sequence.nextThrows() {
 ///         /* code consuming data */
 ///     }
 ///
-/// handling errors manually:
-///
+///     // use normal mode (standard library does not
+///     // support try/catch in sequences :()
 ///     for element in sequence {
 ///         /* code consuming data */
 ///     }
@@ -50,12 +31,12 @@ public struct ThrowingStream<Element, Failure> : ErrorReportingSequence, ErrorRe
 {
     private var produce : () throws -> Element?
     public private(set) var lastError : Error?
-
+    
     /// Constructs a synchronous throwing stream from a given element-producing closure `produce`.
     public init(unfolding produce: @escaping () throws -> Element?) where Failure == Error {
         self.produce = produce
     }
-
+    
     public mutating func nextThrows() throws -> Element? {
         do {
             return try produce()
@@ -69,7 +50,7 @@ public struct ThrowingStream<Element, Failure> : ErrorReportingSequence, ErrorRe
     public mutating func next() -> Element? {
         return try? nextThrows()
     }
-
+    
     public struct Iterator : ErrorReportingIteratorProtocol, ThrowingIteratorProtocol
     {
         internal var stream : ThrowingStream<Element, Failure>
