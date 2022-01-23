@@ -9,7 +9,9 @@ import System
 
 public enum PbLogger {}
 
-private func processItem(_ item : Any) -> Any {
+fileprivate var _lock = NSRecursiveLock()
+
+fileprivate func processItem(_ item : Any) -> Any {
     if let error = item as? Error {
         return error.localizedDescription
     }
@@ -19,17 +21,21 @@ private func processItem(_ item : Any) -> Any {
 #if DEBUG
 
 public func dbg(_ items: Any..., function : String = #function, file : String = #fileID, line : Int = #line) {
-    print("DBG:", "\(file)(\(line)): \(function):", "", terminator: "")
-    items.forEach() { item in print(item, "", terminator: "") }
-    print(terminator: "\n")
+    _lock.withLock {
+        print("DBG:", "\(file)(\(line)): \(function):", "", terminator: "")
+        items.forEach() { item in print(item, "", terminator: "") }
+        print(terminator: "\n")
+    }
 }
 
 public extension PbLogger
 {
     static func log(_ items: Any..., function : String = #function, file : String = #fileID, line : Int = #line) {
-        print("LOG:", "\(file)(\(line)): \(function):", "", terminator: "")
-        items.forEach() { item in print(processItem(item), "", terminator: "") }
-        print(terminator: "\n")
+        _lock.withLock {
+            print("LOG:", "\(file)(\(line)): \(function):", "", terminator: "")
+            items.forEach() { item in print(processItem(item), "", terminator: "") }
+            print(terminator: "\n")
+        }
     }
 }
 
@@ -38,7 +44,7 @@ public extension PbLogger
 @inlinable
 public func dbg(_ items: Any...) {}
 
-public extension ReleaseLogger
+public extension PbLogger
 {
     @inlinable
     static func log(_ items: Any..., function : String = #function) {
