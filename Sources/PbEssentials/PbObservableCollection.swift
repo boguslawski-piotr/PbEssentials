@@ -18,7 +18,6 @@ where SubSequence == Elements.SubSequence,
     associatedtype Elements: Collection where Elements.Element: PbObservableObject
     
     var _subscriptions : [AnyCancellable?] { get set }
-
     var _elements : Elements { get set }
     var elements : Elements { get set }
 }
@@ -81,13 +80,6 @@ where Elements: RandomAccessCollection
 
 extension PbObservableRandomAccessCollection
 {
-    public var startIndex: Index { elements.startIndex }
-    public var endIndex: Index { elements.endIndex }
-    public var indices: Indices { elements.indices }
-    
-    public subscript(bounds: Range<Index>) -> SubSequence { elements[bounds] }
-    public subscript(position: Index) -> Element { elements[position] }
-    
     public func index(before i: Index) -> Index { elements.index(before: i) }
     public func formIndex(before i: inout Index) { elements.formIndex(before: &i) }
     public func index(after i: Index) -> Index { elements.index(after: i) }
@@ -95,9 +87,8 @@ extension PbObservableRandomAccessCollection
     
     public func index(_ i: Index, offsetBy distance: Int) -> Index { elements.index(i, offsetBy: distance) }
     public func index(_ i: Index, offsetBy distance: Int, limitedBy limit: Index) -> Index? { elements.index(i, offsetBy: distance, limitedBy: limit) }
+
     public func distance(from start: Index, to end: Index) -> Int { elements.distance(from: start, to: end) }
-    
-    public __consuming func makeIterator() -> Iterator { elements.makeIterator() }
 }
 
 // MARK: PbObservableCollectionBase
@@ -172,7 +163,7 @@ extension PbObservableSet: Decodable where Element: Decodable
 extension PbObservableSet: Encodable where Element: Encodable
 {}
 
-extension PbObservableArray
+extension PbObservableSet
 {
     // TODO: basic Set pass-through methods
 }
