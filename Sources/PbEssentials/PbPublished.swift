@@ -37,16 +37,16 @@ public final class PbPublished<Value> : PbPublishedProperty
     public lazy var projectedValue = PublicValuePublishers(willChange: valueWillChange.eraseToAnyPublisher(),
                                                            didChange: valueDidChange.eraseToAnyPublisher())
     
-    public init(wrappedValue : Value) {
+    public init(wrappedValue: Value) {
         value = wrappedValue
     }
 
-    public init(wrappedValue : Value) where Value: PbObservableObject {
+    public init(wrappedValue: Value) where Value: PbObservableObject {
         value = wrappedValue
-
-        valueDidSet = {
-            self.subscriptions[0] = self.value.objectWillChange.sink { _ in self.parentObjectWillChange?.send() }
-            self.subscriptions[1] = self.value.objectDidChange.sink { _ in self.parentObjectDidChange?.send() }
+        valueDidSet = { [weak self] in
+            self?.cancelSubscriptions()
+            self?.subscriptions[0] = self?.value.objectWillChange.sink { [weak self] _ in self?.parentObjectWillChange?.send() }
+            self?.subscriptions[1] = self?.value.objectDidChange.sink { [weak self] _ in self?.parentObjectDidChange?.send() }
         }
         valueDidSet!()
     }
@@ -61,8 +61,15 @@ public final class PbPublished<Value> : PbPublishedProperty
     private var valueDidSet : (() -> Void)?
     private var value : Value
 
+    private func cancelSubscriptions() {
+        subscriptions.enumerated().forEach({
+            $0.element?.cancel()
+            subscriptions[$0.offset] = nil
+        })
+    }
+
     deinit {
-        subscriptions.forEach({ $0?.cancel() })
+        cancelSubscriptions()
     }
 }
 
@@ -71,6 +78,7 @@ extension PbPublished: Codable where Value: Codable
     public convenience init(from decoder: Decoder) throws {
         let value = try Value(from: decoder)
         self.init(wrappedValue: value)
+        // TODO: Find a way to identify value as a PbObservableObject
     }
 
     public func encode(to encoder: Encoder) throws where Value: Codable {
