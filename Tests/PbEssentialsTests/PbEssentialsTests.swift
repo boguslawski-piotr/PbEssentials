@@ -74,7 +74,7 @@ final class PbObservableObjectPbPublishedTests: XCTestCase
         XCTAssert(weatherWillChange == 4)
         XCTAssert(weatherDidChange == 4)
         
-        XCTAssert(temperatureChanges == 3) // because property publisher work different than common objectWill/DidChange
+        XCTAssert(temperatureChanges == 3) // because property publisher works different than common objectWill/DidChange
         XCTAssert(temperatureDidChangeCount == 3)
     }
     

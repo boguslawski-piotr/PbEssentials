@@ -93,7 +93,7 @@ extension PbObservableRandomAccessCollection
 
 // MARK: PbObservableCollectionBase
 
-public class PbObservableCollectionBase
+open class PbObservableCollectionBase
 {
     public var _subscriptions : [AnyCancellable?] = []
 }

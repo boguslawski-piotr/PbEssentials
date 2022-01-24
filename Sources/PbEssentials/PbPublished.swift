@@ -4,10 +4,20 @@
 
 import Combine
 
+/**
+ A property that can report changes to the parent.
+ 
+ The properties `_objectWillChange` and `_objectDidChange`should be declared
+ but should never be initialized. Their initialization will take place automatically from
+ the parent object (if it's an object that conforms to PbObservableObject).
+ */
 public protocol PbPublishedProperty
 {
-    var parentObjectWillChange : ObservableObjectPublisher? { get set }
-    var parentObjectDidChange : ObservableObjectPublisher? { get set }
+    /// Publisher for `willSet` events, in the parent observable object
+    var _objectWillChange : ObservableObjectPublisher? { get nonmutating set }
+
+    /// Publisher for `didSet` events, in the parent observable object.
+    var _objectDidChange : ObservableObjectPublisher? { get nonmutating set }
 }
 
 @propertyWrapper
@@ -16,25 +26,25 @@ public final class PbPublished<Value> : PbPublishedProperty
     public var wrappedValue : Value {
         get { value }
         set {
-            parentObjectWillChange?.send()
+            _objectWillChange?.send()
             valueWillChange.send(newValue)
             
             value = newValue
             
             valueDidChange.send(newValue)
-            parentObjectDidChange?.send()
+            _objectDidChange?.send()
 
             valueDidSet?()
         }
     }
 
-    public struct PublicValuePublishers
+    public struct ValuePublicPublishers
     {
         public var willChange : AnyPublisher<Value, Never>
         public var didChange : AnyPublisher<Value, Never>
     }
 
-    public lazy var projectedValue = PublicValuePublishers(willChange: valueWillChange.eraseToAnyPublisher(),
+    public lazy var projectedValue = ValuePublicPublishers(willChange: valueWillChange.eraseToAnyPublisher(),
                                                            didChange: valueDidChange.eraseToAnyPublisher())
     
     public init(wrappedValue: Value) {
@@ -45,14 +55,14 @@ public final class PbPublished<Value> : PbPublishedProperty
         value = wrappedValue
         valueDidSet = { [weak self] in
             self?.cancelSubscriptions()
-            self?.subscriptions[0] = self?.value.objectWillChange.sink { [weak self] _ in self?.parentObjectWillChange?.send() }
-            self?.subscriptions[1] = self?.value.objectDidChange.sink { [weak self] _ in self?.parentObjectDidChange?.send() }
+            self?.subscriptions[0] = self?.value.objectWillChange.sink { [weak self] _ in self?._objectWillChange?.send() }
+            self?.subscriptions[1] = self?.value.objectDidChange.sink { [weak self] _ in self?._objectDidChange?.send() }
         }
         valueDidSet!()
     }
 
-    public var parentObjectWillChange : ObservableObjectPublisher?
-    public var parentObjectDidChange : ObservableObjectPublisher?
+    public var _objectWillChange : ObservableObjectPublisher?
+    public var _objectDidChange : ObservableObjectPublisher?
 
     private lazy var valueWillChange = CurrentValueSubject<Value, Never>(value)
     private lazy var valueDidChange = CurrentValueSubject<Value, Never>(value)
@@ -78,7 +88,15 @@ extension PbPublished: Codable where Value: Codable
     public convenience init(from decoder: Decoder) throws {
         let value = try Value(from: decoder)
         self.init(wrappedValue: value)
-        // TODO: Find a way to identify value as a PbObservableObject
+        
+        if let value = value as? PbObservableObjectType {
+            valueDidSet = { [weak self] in
+                self?.cancelSubscriptions()
+                self?.subscriptions[0] = value.objectWillChange.sink { [weak self] _ in self?._objectWillChange?.send() }
+                self?.subscriptions[1] = value.objectDidChange.sink { [weak self] _ in self?._objectDidChange?.send() }
+            }
+            valueDidSet!()
+        }
     }
 
     public func encode(to encoder: Encoder) throws where Value: Codable {

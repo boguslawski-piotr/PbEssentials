@@ -4,7 +4,24 @@
 
 import Combine
 
-public protocol PbObservableObject : ObservableObject, Identifiable
+/**
+ Protocol that you can use to recognize objects that conforms to PbObservableObject in runtime.
+ It doesn't have the associated type and can be used as a type :) in code like this:
+ 
+     if let obj = obj as? PbObservableObjectType {
+         objectWillChange.sink { ... }
+     }
+ */
+public protocol PbObservableObjectType : AnyObject
+{
+    var objectWillChange : ObservableObjectPublisher { get }
+    var objectDidChange : ObservableObjectPublisher { get }
+}
+
+/**
+ A type of object with a publishers that emits before and after the object has changed.
+ */
+public protocol PbObservableObject : ObservableObject, PbObservableObjectType, Identifiable
 {
     /// The type of publisher that emits after the object has changed.
     associatedtype ObjectDidChangePublisher : Publisher = ObservableObjectPublisher where ObjectDidChangePublisher.Failure == Never
@@ -20,14 +37,12 @@ public extension PbObservableObject where Self.ObjectWillChangePublisher == Obse
     var objectDidChange : ObservableObjectPublisher { observableObjectPublisher(type: .did) }
 }
 
-public class PbObservableObjectBase : PbObservableObject {}
-
 // MARK: Private implementation
 
 fileprivate extension PbObservableObject where Self.ObjectWillChangePublisher == ObservableObjectPublisher,
                                                Self.ObjectDidChangePublisher == ObservableObjectPublisher
 {
-    func observableObjectPublisher(type : Storage.PublisherType) -> ObservableObjectPublisher {
+    func observableObjectPublisher(type: Storage.PublisherType) -> ObservableObjectPublisher {
         // Simple concept:
         // If object has no properties marked with @PbPublished then return publisher from global cache
         // else:
@@ -37,16 +52,16 @@ fileprivate extension PbObservableObject where Self.ObjectWillChangePublisher ==
         var reflection : Mirror? = Mirror(reflecting: self)
         while let aClass = reflection {
             for (_, property) in aClass.children {
-                guard var publishedProperty = property as? PbPublishedProperty else { continue }
+                guard let publishedProperty = property as? PbPublishedProperty else { continue }
                 if type == .will {
-                    if publishedProperty.parentObjectWillChange != nil { return publishedProperty.parentObjectWillChange! }
+                    if publishedProperty._objectWillChange != nil { return publishedProperty._objectWillChange! }
                     publisher = (publisher == nil) ? ObservableObjectPublisher() : publisher
-                    publishedProperty.parentObjectWillChange = publisher
+                    publishedProperty._objectWillChange = publisher
                 }
                 else {
-                    if publishedProperty.parentObjectDidChange != nil { return publishedProperty.parentObjectDidChange! }
+                    if publishedProperty._objectDidChange != nil { return publishedProperty._objectDidChange! }
                     publisher = (publisher == nil) ? ObservableObjectPublisher() : publisher
-                    publishedProperty.parentObjectDidChange = publisher
+                    publishedProperty._objectDidChange = publisher
                 }
             }
             reflection = aClass.superclassMirror
@@ -65,7 +80,7 @@ fileprivate class Storage
         case will = 0, did = 1
     }
     
-    func publisher(of type : PublisherType, for id : ObjectIdentifier) -> ObservableObjectPublisher {
+    func publisher(of type: PublisherType, for id: ObjectIdentifier) -> ObservableObjectPublisher {
         var publisher : ObservableObjectPublisher?
         $publishers.withLock {
             if publishers[id] != nil {

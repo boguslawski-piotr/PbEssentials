@@ -4,69 +4,43 @@
 
 import Foundation
 
-// MARK: PbValueWithLock
-
-public struct PbValueWithLock<Value>
-{
-    public var valueWithoutLock : Value
-    public let lock = NSRecursiveLock()
-    public var value : Value {
-        get {
-            lock.lock()
-            let v = valueWithoutLock
-            lock.unlock()
-            return v
-        }
-        set {
-            lock.lock()
-            valueWithoutLock = newValue
-            lock.unlock()
-        }
-    }
-    
-    public init(_ value : Value) {
-        self.valueWithoutLock = value
-    }
-    
-    public func callAsFunction() -> Value {
-        value
-    }
-
-    public mutating func callAsFunction(_ value : Value) {
-        self.value = value
-    }
-}
-
-// MARK: PbWithLock property wrapper
-
 @propertyWrapper
 public struct PbWithLock<Value>
 {
-    public var valueWithoutLock : Value
-    public let lock = NSRecursiveLock()
-    public var value : Value {
+    // MARK: Property wrapper
+    
+    public let projectedValue = NSRecursiveLock()
+    public var wrappedValue : Value {
         get {
             lock.lock()
-            let v = valueWithoutLock
+            let v = _value
             lock.unlock()
             return v
         }
         set {
             lock.lock()
-            valueWithoutLock = newValue
+            _value = newValue
             lock.unlock()
         }
     }
 
-    public var projectedValue : NSRecursiveLock { lock }
-    public var wrappedValue : Value {
-        get { value }
-        set { value = newValue }
+    public init(wrappedValue: Value) {
+        self._value = wrappedValue
     }
+
+    // MARK: Normal boxing structure
     
-    public init(wrappedValue : Value) {
-        self.valueWithoutLock = wrappedValue
+    public var lock : NSRecursiveLock { projectedValue }
+    public var value : Value {
+        get { wrappedValue }
+        set { wrappedValue = newValue }
     }
+
+    public init(_ value: Value) {
+        self._value = value
+    }
+
+    private var _value : Value
 }
 
 // MARK: NSLock / NSRecursiveLock Extensions
