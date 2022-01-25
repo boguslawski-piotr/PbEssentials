@@ -42,6 +42,13 @@ public class PbError : Error, LocalizedError
         }
     }
     
+    public init(_ error : NSError) {
+        self.error = error
+        self.when = Date()
+        self.what = error.localizedDescription
+        // TODO: skonstruowac `what` ze wszystkich danych, ktore dostarcza NSError
+    }
+
     public init(_ error : PbError) {
         self.error = nil
         self.when = error.when
