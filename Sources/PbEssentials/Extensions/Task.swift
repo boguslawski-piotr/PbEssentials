@@ -19,17 +19,6 @@ public extension Task where Success == Never, Failure == Never
     }
 }
 
-public extension Task where Failure == Never
-{
-    static func delayed(by ti : TimeInterval, priority : TaskPriority? = nil,
-                        @_implicitSelfCapture operation : @escaping @Sendable () async -> Success) -> Task {
-        Task(priority: priority) {
-            try? await Task<Never, Never>.sleep(for: ti)
-            return await operation()
-        }
-    }
-}
-
 public extension Task where Failure == Error
 {
     static func delayed(by ti : TimeInterval, priority : TaskPriority? = nil,
