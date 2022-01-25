@@ -39,7 +39,6 @@ final class PbObservableObjectPbPublishedTests: XCTestCase
         var weatherWillChange = 0
         var weatherDidChange = 0
         var temperatureChanges = 0
-        var temperatureDidChangeCount = 0
 
         c1 = weather.objectWillChange
             .sink() {
@@ -51,15 +50,10 @@ final class PbObservableObjectPbPublishedTests: XCTestCase
                 dbg("Weather did change")
                 weatherDidChange += 1
             }
-        c3 = weather.$temperature.willChange
+        c3 = weather.$temperature
             .sink() {
                 dbg("(will) Temperature now: \($0)")
                 temperatureChanges += 1
-            }
-        c4 = weather.$temperature.didChange
-            .sink() {
-                dbg("(did) Temperature now: \($0)")
-                temperatureDidChangeCount += 1
             }
         
         weather.temperature = 25
@@ -75,7 +69,6 @@ final class PbObservableObjectPbPublishedTests: XCTestCase
         XCTAssert(weatherDidChange == 4)
         
         XCTAssert(temperatureChanges == 3) // because property publisher works different than common objectWill/DidChange
-        XCTAssert(temperatureDidChangeCount == 3)
     }
     
     func test2() {

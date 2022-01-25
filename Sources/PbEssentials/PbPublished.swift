@@ -3,6 +3,7 @@
 /// MIT license, see License.md file for details.
 
 import Combine
+import Foundation
 
 /**
  A property that can report changes to the parent.
@@ -23,36 +24,41 @@ public protocol PbPublishedProperty
 @propertyWrapper
 public final class PbPublished<Value> : PbPublishedProperty
 {
+    public enum Options {
+        case withLock
+    }
+    
     public var wrappedValue : Value {
-        get { value }
+        get {
+            lock?.lock()
+            let v = value
+            lock?.unlock()
+            return v
+        }
         set {
             _objectWillChange?.send()
             valueWillChange.send(newValue)
             
+            lock?.lock()
             value = newValue
-            
-            valueDidChange.send(newValue)
+            lock?.unlock()
+
             _objectDidChange?.send()
 
             valueDidSet?()
         }
     }
 
-    public struct ValuePublicPublishers
-    {
-        public var willChange : AnyPublisher<Value, Never>
-        public var didChange : AnyPublisher<Value, Never>
-    }
-
-    public lazy var projectedValue = ValuePublicPublishers(willChange: valueWillChange.eraseToAnyPublisher(),
-                                                           didChange: valueDidChange.eraseToAnyPublisher())
+    public lazy var projectedValue = valueWillChange.eraseToAnyPublisher()
     
-    public init(wrappedValue: Value) {
+    public init(wrappedValue: Value, _ options: Options? = nil) {
         value = wrappedValue
+        parseOptions(options)
     }
 
-    public init(wrappedValue: Value) where Value: PbObservableObject {
+    public init(wrappedValue: Value, _ options: Options? = nil) where Value: PbObservableObject {
         value = wrappedValue
+        parseOptions(options)
         valueDidSet = { [weak self] in
             self?.cancelSubscriptions()
             self?.subscriptions[0] = self?.value.objectWillChange.sink { [weak self] _ in self?._objectWillChange?.send() }
@@ -65,12 +71,19 @@ public final class PbPublished<Value> : PbPublishedProperty
     public var _objectDidChange : ObservableObjectPublisher?
 
     private lazy var valueWillChange = CurrentValueSubject<Value, Never>(value)
-    private lazy var valueDidChange = CurrentValueSubject<Value, Never>(value)
     
     private var subscriptions : [AnyCancellable?] = [nil,nil]
     private var valueDidSet : (() -> Void)?
+    
+    private var lock : NSRecursiveLock?
     private var value : Value
 
+    private func parseOptions(_ options: Options?) {
+        if options == .withLock {
+            lock = NSRecursiveLock()
+        }
+    }
+    
     private func cancelSubscriptions() {
         subscriptions.enumerated().forEach({
             $0.element?.cancel()
