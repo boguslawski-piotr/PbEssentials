@@ -6,6 +6,8 @@ import Foundation
 import System
 import AppleArchive
 
+#if !targetEnvironment(simulator)
+
 @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
 public extension FileManager
 {
@@ -21,7 +23,7 @@ public extension FileManager
         }
         
         do {
-            try PbCompressor(toFile: path, compression: compression, permissions: attributesToFilePermissions(attr))
+            try PbAppleArchiveCompressor(toFile: path, compression: compression, permissions: attributesToFilePermissions(attr))
                 .append(data: data ?? Data())
                 .close()
             return true
@@ -37,10 +39,12 @@ public extension FileManager
         }
         
         do {
-            return try PbDecompressor(fromFile: path).read()
+            return try PbAppleArchiveDecompressor(fromFile: path).read()
         }
         catch {
             return nil
         }
     }
 }
+
+#endif
