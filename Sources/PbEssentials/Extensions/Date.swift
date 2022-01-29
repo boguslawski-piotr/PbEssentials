@@ -21,6 +21,32 @@ public extension Date
         df.timeStyle = .medium
         return df.string(from: self)
     }
+
+    @inlinable
+    var easilyReadable : String {
+        let df = DateFormatter()
+        let cal = Calendar.autoupdatingCurrent
+        
+        if cal.isDateInToday(self) {
+            df.dateStyle = .none
+            df.timeStyle = self > Date().advanced(by: -3600) ? .medium : .short
+        }
+        else {
+            let weekAgo = Date().advanced(by: -(604_800))
+            if self > weekAgo {
+                let weekday = cal.weekdaySymbols[cal.component(.weekday, from: self) - 1]
+                df.dateStyle = .none
+                df.timeStyle = .short
+                let time = df.string(from: self)
+                return weekday + ", " + time
+            }
+            else {
+                df.dateStyle = .medium
+                df.timeStyle = .short
+            }
+        }
+        return df.string(from: self)
+    }
 }
 
 public extension TimeInterval
