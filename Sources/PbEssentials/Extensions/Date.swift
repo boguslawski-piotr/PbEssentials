@@ -22,7 +22,6 @@ public extension Date
         return df.string(from: self)
     }
 
-    @inlinable
     var easilyReadable : String {
         let df = DateFormatter()
         let cal = Calendar.autoupdatingCurrent
