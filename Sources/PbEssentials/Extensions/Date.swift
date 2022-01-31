@@ -28,7 +28,7 @@ public extension Date
         
         if cal.isDateInToday(self) {
             df.dateStyle = .none
-            df.timeStyle = self > Date().advanced(by: -3600) ? .medium : .short
+            df.timeStyle = self > Date().advanced(by: -60) ? .medium : .short
         }
         else {
             let weekAgo = Date().advanced(by: -(604_800))
