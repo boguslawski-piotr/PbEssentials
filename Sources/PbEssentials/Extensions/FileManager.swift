@@ -23,9 +23,9 @@ public extension FileManager
         }
         
         do {
-            try PbAppleArchiveCompressor(toFile: path, compression: compression, permissions: attributesToFilePermissions(attr))
-                .append(data: data ?? Data())
-                .close()
+            var cf = try PbAppleArchiveCompressor(toFile: path, compression: compression, permissions: attributesToFilePermissions(attr))
+            try cf.append(data: data ?? Data())
+            try cf.close()
             return true
         }
         catch {
@@ -39,7 +39,10 @@ public extension FileManager
         }
         
         do {
-            return try PbAppleArchiveDecompressor(fromFile: path).read()
+            var df = try PbAppleArchiveDecompressor(fromFile: path)
+            let result = try df.read()
+            try df.close()
+            return result
         }
         catch {
             return nil

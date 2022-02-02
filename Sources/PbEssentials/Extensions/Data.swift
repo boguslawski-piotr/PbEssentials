@@ -8,7 +8,7 @@ import AppleArchive
 @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
 public extension Data
 {
-    #if !targetEnvironment(simulator)
+#if !targetEnvironment(simulator)
 
     typealias Compression = AppleArchive.ArchiveCompression
 
@@ -17,9 +17,9 @@ public extension Data
             return try write(to: url)
         }
         
-        try PbAppleArchiveCompressor(toFile: url.path, compression: compression)
-            .append(data: self)
-            .close()
+        var cf = try PbAppleArchiveCompressor(toFile: url.path, compression: compression)
+        try cf.append(data: self)
+        try cf.close()
     }
 
     init(contentsOf url: URL, decompress: Bool) throws {
@@ -27,28 +27,34 @@ public extension Data
             try self.init(contentsOf: url)
         }
         else {
-            self = try PbAppleArchiveDecompressor(fromFile: url.path).read() ?? Data()
+            var df = try PbAppleArchiveDecompressor(fromFile: url.path)
+            self = try df.read() ?? Data()
+            try df.close()
         }
     }
     
-    #endif
+#endif
     
-    func write(to url: URL, compressor: PbCompressorProtocol?) throws {
+    func write(to url: URL, compressor: PbCompressor?) throws {
         if compressor == nil {
             return try write(to: url)
         }
         
-        try compressor?.create(file: url.path, permissions: nil)
-            .append(data: self, withName: nil)
-            .close()
+        var cf = compressor!
+        try cf.create(file: url.path, permissions: nil)
+        try cf.append(data: self, withName: nil)
+        try cf.close()
     }
 
-    init(contentsOf url: URL, decompressor: PbDecompressorProtocol?) throws {
+    init(contentsOf url: URL, decompressor: PbDecompressor?) throws {
         if decompressor == nil {
             try self.init(contentsOf: url)
         }
         else {
-            self = try decompressor?.open(file: url.path, permissions: nil).read() ?? Data()
+            var df = decompressor!
+            try df.open(file: url.path, permissions: nil)
+            self = try df.read() ?? Data()
+            try df.close()
         }
     }
 }

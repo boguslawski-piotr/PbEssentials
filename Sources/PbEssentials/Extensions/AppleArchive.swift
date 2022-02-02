@@ -9,8 +9,17 @@ import AppleArchive
 #if !targetEnvironment(simulator)
 
 @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
-public class PbAppleArchiveCompressor : PbCompressorProtocol
+public struct PbAppleArchiveCompressor : PbCompressor
 {
+    public init(compression: PbCompression) {
+        switch compression {
+        case .fast:
+            self.compression = .lz4
+        case .strong:
+            self.compression = .lzma
+        }
+    }
+    
     public init(compression: ArchiveCompression? = nil) {
         self.compression = compression
     }
@@ -26,21 +35,17 @@ public class PbAppleArchiveCompressor : PbCompressorProtocol
         try makeCompressAndEncodeStreams()
     }
     
-    @discardableResult
-    public func create(file atPath: String, permissions: FilePermissions? = nil) throws -> Self {
+    public mutating func create(file atPath: String, permissions: FilePermissions? = nil) throws {
         try makeOutputFileStream(atPath, permissions ?? FilePermissions(rawValue: 0o644))
         try makeCompressAndEncodeStreams()
-        return self
     }
     
-    @discardableResult
-    public func append(contentsOf url: URL, withName: String? = nil) throws -> Self {
+    public mutating func append(contentsOf url: URL, withName: String? = nil) throws {
         let data = try Data(contentsOf: url)
-        return try append(data: data, withName: withName ?? url.lastPathComponent)
+        try append(data: data, withName: withName ?? url.lastPathComponent)
     }
     
-    @discardableResult
-    public func append(data: Data, withName: String? = nil) throws -> Self {
+    public mutating func append(data: Data, withName: String? = nil) throws {
         guard encodeStream != nil else { throw ArchiveError.invalidValue }
         
         let header = ArchiveHeader()
@@ -56,11 +61,9 @@ public class PbAppleArchiveCompressor : PbCompressorProtocol
             let rawBuffer = UnsafeRawBufferPointer(ptr)
             try encodeStream!.writeBlob(key: .init("DAT"), from: rawBuffer)
         }
-        
-        return self
     }
     
-    public func close() throws {
+    public mutating func close() throws {
         try encodeStream?.close()
         try compressStream?.close()
         try outputStream?.close()
@@ -69,16 +72,12 @@ public class PbAppleArchiveCompressor : PbCompressorProtocol
         outputStream = nil
     }
     
-    deinit {
-        try? close()
-    }
-    
     private var compression : ArchiveCompression?
     private var encodeStream : ArchiveStream?
     private var compressStream : ArchiveByteStream?
     private var outputStream : ArchiveByteStream?
     
-    private func makeOutputFileStream(_ atPath: String, _ permissions: FilePermissions) throws {
+    private mutating func makeOutputFileStream(_ atPath: String, _ permissions: FilePermissions) throws {
         outputStream = ArchiveByteStream.fileStream(
             path: FilePath(atPath),
             mode: .writeOnly,
@@ -86,7 +85,7 @@ public class PbAppleArchiveCompressor : PbCompressorProtocol
             permissions: permissions)
     }
     
-    private func makeCompressAndEncodeStreams() throws {
+    private mutating func makeCompressAndEncodeStreams() throws {
         guard outputStream != nil else { throw ArchiveError.invalidValue }
         let compression = self.compression ?? .lzma
         
@@ -99,7 +98,7 @@ public class PbAppleArchiveCompressor : PbCompressorProtocol
 }
 
 @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
-public final class PbAppleArchiveDecompressor : PbDecompressorProtocol, ErrorReportingSequence, AsyncSequence, ErrorReportingIteratorProtocol, ThrowingIteratorProtocol
+public struct PbAppleArchiveDecompressor : PbDecompressor, ErrorReportingSequence, AsyncSequence, ErrorReportingIteratorProtocol, ThrowingIteratorProtocol
 {
     public init() {}
     
@@ -112,24 +111,22 @@ public final class PbAppleArchiveDecompressor : PbDecompressorProtocol, ErrorRep
         try makeDecompressAndDecodeStreams()
     }
     
-    @discardableResult
-    public func open(file atPath: String, permissions: FilePermissions? = nil) throws  -> Self {
+    public mutating func open(file atPath: String, permissions: FilePermissions? = nil) throws {
         try makeInputFileStream(atPath, permissions ?? FilePermissions(rawValue: 0o644))
         try makeDecompressAndDecodeStreams()
-        return self
     }
     
-    public func read() throws -> Data? {
+    public mutating func read() throws -> Data? {
         return try _next()
     }
 
-    public func read(_ name: inout String) throws -> Data? {
+    public mutating func read(_ name: inout String) throws -> Data? {
         let data = try _next()
         name = lastStringPatField
         return data
     }
 
-    public func close() throws {
+    public mutating func close() throws {
         try decodeStream?.close()
         try decompressStream?.close()
         try inputStream?.close()
@@ -139,16 +136,12 @@ public final class PbAppleArchiveDecompressor : PbDecompressorProtocol, ErrorRep
         lastError = nil
     }
     
-    deinit {
-        try? close()
-    }
-    
     // MARK: Sequences and Iterators conformance implementation
     
     public struct AsyncIterator : AsyncIteratorProtocol
     {
-        internal let decompressor : PbAppleArchiveDecompressor
-        public func next() async throws -> Element? {
+        internal var decompressor : PbAppleArchiveDecompressor
+        public mutating func next() async throws -> Element? {
             return try decompressor._next()
         }
     }
@@ -159,13 +152,13 @@ public final class PbAppleArchiveDecompressor : PbDecompressorProtocol, ErrorRep
     
     public typealias Element = Data
     
-    public func nextThrows() throws -> Data? {
+    public mutating func nextThrows() throws -> Data? {
         return try _next()
     }
     
     public var lastError : Error?
 
-    public func next() -> Data? {
+    public mutating func next() -> Data? {
         do {
             return try _next()
         }
@@ -181,7 +174,7 @@ public final class PbAppleArchiveDecompressor : PbDecompressorProtocol, ErrorRep
     private var decompressStream : ArchiveByteStream?
     private var decodeStream : ArchiveStream?
     
-    private func makeInputFileStream(_ atPath: String, _ permissions: FilePermissions) throws {
+    private mutating func makeInputFileStream(_ atPath: String, _ permissions: FilePermissions) throws {
         inputStream = ArchiveByteStream.fileStream(
             path: FilePath(atPath),
             mode: .readOnly,
@@ -189,7 +182,7 @@ public final class PbAppleArchiveDecompressor : PbDecompressorProtocol, ErrorRep
             permissions: permissions)
     }
     
-    private func makeDecompressAndDecodeStreams() throws {
+    private mutating func makeDecompressAndDecodeStreams() throws {
         guard inputStream != nil else {
             throw ArchiveError.invalidValue
         }
@@ -209,7 +202,7 @@ public final class PbAppleArchiveDecompressor : PbDecompressorProtocol, ErrorRep
     
     private var lastStringPatField = ""
     
-    private func _next() throws -> Data? {
+    private mutating func _next() throws -> Data? {
         guard let header = try decodeStream?.readHeader() else {
             try close()
             return nil

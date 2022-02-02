@@ -40,8 +40,13 @@ public extension Date
                 return weekday + ", " + time
             }
             else {
-                df.dateStyle = .medium
-                df.timeStyle = .short
+//                if cal.component(.year, from: self) == cal.component(.year, from: Date()) {
+//                    df.dateFormat = DateFormatter.dateFormat(fromTemplate: "dMMMhhmm", options: 0, locale: cal.locale)
+//                }
+//                else {
+                    df.dateStyle = .medium
+                    df.timeStyle = .short
+//                }
             }
         }
         return df.string(from: self)
