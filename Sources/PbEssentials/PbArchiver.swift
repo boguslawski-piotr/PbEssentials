@@ -26,7 +26,7 @@ public protocol PbDecompressor
     init()
     mutating func open(file atPath: String, permissions: FilePermissions?) throws
     mutating func read() throws -> Data?
-    mutating func read(_ name: inout String) throws -> Data?
+    mutating func readWithName() throws -> (Data?, String)
     mutating func close() throws
 }
 

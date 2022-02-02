@@ -120,10 +120,9 @@ public struct PbAppleArchiveDecompressor : PbDecompressor, ErrorReportingSequenc
         return try _next()
     }
 
-    public mutating func read(_ name: inout String) throws -> Data? {
+    public mutating func readWithName() throws -> (Data?, String) {
         let data = try _next()
-        name = lastStringPatField
-        return data
+        return (data, lastStringPatField)
     }
 
     public mutating func close() throws {
@@ -203,13 +202,14 @@ public struct PbAppleArchiveDecompressor : PbDecompressor, ErrorReportingSequenc
     private var lastStringPatField = ""
     
     private mutating func _next() throws -> Data? {
+        lastStringPatField = ""
+
         guard let header = try decodeStream?.readHeader() else {
             try close()
             return nil
         }
         
         let patField = header.field(forKey: .init("PAT"))
-        lastStringPatField = ""
         if case .string(_, let name) = patField {
             lastStringPatField = name
         }
