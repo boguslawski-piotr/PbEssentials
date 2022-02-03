@@ -20,9 +20,9 @@ fileprivate func processItem(_ item : Any) -> Any {
 
 #if DEBUG
 
-public func dbg(_ items: Any..., function : String = #function, file : String = #fileID, line : Int = #line) {
+public func dbg(level: Int = 0, _ items: Any..., function: String = #function, file: String = #fileID, line: Int = #line) {
     _lock.withLock {
-        print("DBG:", "\(file)(\(line)): \(function):", "", terminator: "")
+        print("DBG" + (level == 0 ? "" : "\(level)") + ":", "\(file)(\(line)): \(function):", "", terminator: "")
         items.forEach() { item in print(item, "", terminator: "") }
         print(terminator: "\n")
     }
@@ -30,7 +30,7 @@ public func dbg(_ items: Any..., function : String = #function, file : String = 
 
 public extension PbLogger
 {
-    static func log(_ items: Any..., function : String = #function, file : String = #fileID, line : Int = #line) {
+    static func log(level: Int = 0, _ items: Any..., function: String = #function, file: String = #fileID, line: Int = #line) {
         _lock.withLock {
             print("LOG:", "\(file)(\(line)): \(function):", "", terminator: "")
             items.forEach() { item in print(processItem(item), "", terminator: "") }
@@ -42,12 +42,12 @@ public extension PbLogger
 #else
 
 @inlinable
-public func dbg(_ items: Any...) {}
+public func dbg(level: Int = 0, _ items: Any...) {}
 
 public extension PbLogger
 {
     @inlinable
-    static func log(_ items: Any..., function : String = #function) {
+    static func log(level: Int = 0, _ items: Any..., function: String = #function) {
         #warning("TODO: implement log for release builds")
     }
 }
