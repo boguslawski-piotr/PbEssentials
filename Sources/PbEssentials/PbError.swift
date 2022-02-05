@@ -8,13 +8,18 @@
 
 import Foundation
 
-public class PbError : Error, LocalizedError
+public struct PbError : Error, LocalizedError, Codable
 {
+    public enum CodingKeys: String, CodingKey {
+        case when
+        case what
+    }
+    
     public let when : Date
     public let what : String
-    public let error : Error?
+    public var error : Error?
     
-    public var description : String { return "\(when.shortWithTimeWithSeconds): \(what)" }
+    public var description : String { return "\(when.formatted(.short, time: .medium)): \(what)" }
     public var shortDescription : String { return "\(what)" }
     public var errorDescription : String? { description }
     public var shortErrorDescription : String? { shortDescription }
@@ -24,14 +29,12 @@ public class PbError : Error, LocalizedError
     public var shortDebugDescription : String? { shortDescription }
 
     public init() {
-        self.error = nil
         self.when = Date.distantPast
         self.what = ""
     }
     
-    public init(_ error : Error) {
+    public init(_ error: Error) {
         if let e = error as? PbError {
-            self.error = nil
             self.when = e.when
             self.what = e.what
         }
@@ -42,21 +45,19 @@ public class PbError : Error, LocalizedError
         }
     }
     
-    public init(_ error : NSError) {
+    public init(_ error: NSError) {
         self.error = error
         self.when = Date()
         self.what = error.localizedDescription
         // TODO: skonstruowac `what` ze wszystkich danych, ktore dostarcza NSError
     }
 
-    public init(_ error : PbError) {
-        self.error = nil
+    public init(_ error: PbError) {
         self.when = error.when
         self.what = error.what
     }
     
-    public init(_ what : String) {
-        self.error = nil
+    public init(_ what: String) {
         self.when = Date()
         self.what = what
     }
