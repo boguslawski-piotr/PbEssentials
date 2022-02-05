@@ -7,46 +7,46 @@ import Foundation
 public extension Date
 {
     @inlinable
-    var shortWithTime : String {
+    func formatted(_ date: DateFormatter.Style = .short, time: DateFormatter.Style = .none) -> String {
         let df = DateFormatter()
-        df.dateStyle = .short
-        df.timeStyle = .short
-        return df.string(from: self)
-    }
-    
-    @inlinable
-    var shortWithTimeWithSeconds : String {
-        let df = DateFormatter()
-        df.dateStyle = .short
-        df.timeStyle = .medium
+        df.dateStyle = date
+        df.timeStyle = time
         return df.string(from: self)
     }
 
-    var easilyReadable : String {
+    func easilyReadable(dateTimeSeparator: String = ", ") -> String {
         let df = DateFormatter()
         let cal = Calendar.autoupdatingCurrent
         
         if cal.isDateInToday(self) {
             df.dateStyle = .none
-            df.timeStyle = self > Date().advanced(by: -60) ? .medium : .short
+            df.timeStyle = .short
         }
         else {
-            let weekAgo = Date().advanced(by: -(604_800))
-            if self > weekAgo {
+            let now = Date()
+            let weekAgo = now.advanced(by: -(604_800))
+            if self > weekAgo && self < now {
                 let weekday = cal.weekdaySymbols[cal.component(.weekday, from: self) - 1]
                 df.dateStyle = .none
                 df.timeStyle = .short
-                let time = df.string(from: self)
-                return weekday + ", " + time
+                return weekday + dateTimeSeparator + df.string(from: self)
             }
             else {
-//                if cal.component(.year, from: self) == cal.component(.year, from: Date()) {
-//                    df.dateFormat = DateFormatter.dateFormat(fromTemplate: "dMMMhhmm", options: 0, locale: cal.locale)
-//                }
-//                else {
+                var date = ""
+                if cal.component(.year, from: self) == cal.component(.year, from: now) {
+                    df.locale = Locale.current
+                    df.setLocalizedDateFormatFromTemplate("dMMM")
+                    date = df.string(from: self)
+                }
+                else {
                     df.dateStyle = .medium
-                    df.timeStyle = .short
-//                }
+                    df.timeStyle = .none
+                    date = df.string(from: self)
+                }
+
+                df.dateStyle = .none
+                df.timeStyle = .short
+                return date + dateTimeSeparator + df.string(from: self)
             }
         }
         return df.string(from: self)
