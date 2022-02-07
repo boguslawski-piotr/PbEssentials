@@ -78,7 +78,7 @@ final public class PbMessages<Sender> where Sender: Identifiable
     }
 }
 
-open class UsesMessages : Identifiable
+open class UsesMessages : Identifiable, Equatable
 {
     public let id : UUID
     
@@ -93,7 +93,11 @@ open class UsesMessages : Identifiable
     public init(basedOn obj: UsesMessages) {
         self.id = obj.id
     }
-    
+
+    public static func == (lhs: UsesMessages, rhs: UsesMessages) -> Bool {
+        lhs.id == rhs.id
+    }
+
     open lazy var messages = PbMessages(self)
     open lazy var localMessages = PbMessages(self, notificationCenter: NotificationCenter())
 }
