@@ -72,19 +72,22 @@ public extension Date
         return df.string(from: self)
     }
 
-    func asPathComponentEasilyReadable(withTime: Bool = false) -> String {
+    func asPathComponentEasilyReadable(time: DateFormatter.Style = .none) -> String {
         let df = DateFormatter()
         df.dateFormat = "yyyy-MM-dd"
         let date = df.string(from: self)
-        if withTime {
-            df.dateFormat = "@HH-mm"
+        if time == .short || time == .medium {
+            df.dateFormat = " HH-mm"
+            if time == .medium {
+                df.dateFormat += "-ss"
+            }
             return (date + df.string(from: self)).asPathComponent
         }
         return date.asPathComponent
     }
 
-    static func asPathComponentEasilyReadable(withTime: Bool = false) -> String {
-        Date().asPathComponentEasilyReadable(withTime: withTime)
+    static func asPathComponentEasilyReadable(time: DateFormatter.Style = .none) -> String {
+        Date().asPathComponentEasilyReadable(time: time)
     }
 }
 
