@@ -71,6 +71,21 @@ public extension Date
         }
         return df.string(from: self)
     }
+
+    func asPathComponentEasilyReadable(withTime: Bool = false) -> String {
+        let df = DateFormatter()
+        df.dateFormat = "yyyy-MM-dd"
+        let date = df.string(from: self)
+        if withTime {
+            df.dateFormat = "@HH-mm"
+            return (date + df.string(from: self)).asPathComponent
+        }
+        return date.asPathComponent
+    }
+
+    static func asPathComponentEasilyReadable(withTime: Bool = false) -> String {
+        Date().asPathComponentEasilyReadable(withTime: withTime)
+    }
 }
 
 public extension TimeInterval
