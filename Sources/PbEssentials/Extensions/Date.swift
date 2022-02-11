@@ -81,9 +81,9 @@ public extension Date
             if time == .medium {
                 df.dateFormat += "-ss"
             }
-            return (date + df.string(from: self)).asPathComponent
+            return (date + df.string(from: self)).asPathComponent()
         }
-        return date.asPathComponent
+        return date.asPathComponent()
     }
 
     static func asPathComponentEasilyReadable(time: DateFormatter.Style = .none) -> String {

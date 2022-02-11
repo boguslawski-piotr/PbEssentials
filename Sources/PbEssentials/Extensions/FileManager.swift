@@ -13,11 +13,11 @@ public extension FileManager
 {
     typealias Compression = AppleArchive.ArchiveCompression
     
-    fileprivate func attributesToFilePermissions(_ attr : [FileAttributeKey : Any]?) -> FilePermissions {
+    fileprivate func attributesToFilePermissions(_ attr: [FileAttributeKey : Any]?) -> FilePermissions {
         FilePermissions(rawValue: (attr?[.posixPermissions] as? NSNumber)?.uint16Value ?? 0o644)
     }
     
-    func createFile(atPath path : String, contents data : Data?, compression: Compression, attributes attr : [FileAttributeKey : Any]? = nil) -> Bool {
+    func createFile(atPath path: String, contents data: Data?, compression: Compression, attributes attr: [FileAttributeKey : Any]? = nil) -> Bool {
         if compression == .none {
             return createFile(atPath: path, contents: data, attributes: attr)
         }
