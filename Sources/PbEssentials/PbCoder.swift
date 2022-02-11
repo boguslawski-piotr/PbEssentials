@@ -57,12 +57,12 @@ open class PbCoderBase<D, E> : PbCoder where D: PbDecoder, E: PbEncoder
     }
 
     open func decode<T>(_ type: T.Type, from: Data) throws -> T where T : Decodable {
-        guard let decoder = decoder else { throw CocoaError(.coderInvalidValue) }
+        guard let decoder = decoder else { throw MachError(.invalidArgument) }
         return try decoder.decode(type, from: from)
     }
 
     open func encode<T>(_ value: T) throws -> Data where T : Encodable {
-        guard let encoder = encoder else { throw CocoaError(.coderInvalidValue) }
+        guard let encoder = encoder else { throw MachError(.invalidArgument) }
         return try encoder.encode(value)
     }
 }
