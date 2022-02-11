@@ -43,6 +43,12 @@ public extension PbProgress
         self.completed = 0
         self.description = ""
     }
+    
+    mutating func update(from: PbProgress) {
+        self.total = from.total
+        self.completed = from.completed
+        self.description = from.description
+    }
 }
 
 public struct PbSimpleProgress: PbProgress
