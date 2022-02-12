@@ -34,14 +34,17 @@ public extension Data
     }
     
 #endif
-    
+}
+
+public extension Data
+{
     func write(to url: URL, compressor: PbCompressor?) throws {
         if compressor == nil {
             return try write(to: url)
         }
         
         var cf = compressor!
-        try cf.create(file: url.path, permissions: nil)
+        try cf.create(file: url.path)
         try cf.append(data: self, withName: nil)
         try cf.close()
     }
@@ -52,7 +55,7 @@ public extension Data
         }
         else {
             var df = decompressor!
-            try df.open(file: url.path, permissions: nil)
+            try df.open(file: url.path)
             self = try df.read() ?? Data()
             try df.close()
         }

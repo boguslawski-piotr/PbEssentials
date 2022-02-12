@@ -41,7 +41,7 @@ public final class PbSimpleCipher : PbCipher
     
     public typealias SymmetricKey = CryptoKit.SymmetricKey
 
-    private var key : SymmetricKey
+    private let key : SymmetricKey
     private lazy var coder = PropertyListCoder()
     
     public init(_ key: SymmetricKey) {

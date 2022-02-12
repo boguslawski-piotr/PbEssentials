@@ -29,13 +29,17 @@ public struct PbAppleArchiveCompressor : PbCompressor
         try create(file: atPath, permissions: permissions)
     }
     
-    public init<Stream>(toStream stream : Stream, compression: ArchiveCompression? = nil) throws where Stream: AnyObject, Stream: ArchiveByteStreamProtocol {
+    public init<Stream>(toStream stream: Stream, compression: ArchiveCompression? = nil) throws where Stream: AnyObject, Stream: ArchiveByteStreamProtocol {
         self.compression = compression
         outputStream = ArchiveByteStream.customStream(instance: stream)
         try makeCompressAndEncodeStreams()
     }
     
-    public mutating func create(file atPath: String, permissions: FilePermissions? = nil) throws {
+    public mutating func create(file atPath: String) throws {
+        try create(file: atPath, permissions: nil)
+    }
+    
+    public mutating func create(file atPath: String, permissions: FilePermissions?) throws {
         try makeOutputFileStream(atPath, permissions ?? FilePermissions(rawValue: 0o644))
         try makeCompressAndEncodeStreams()
     }
@@ -111,7 +115,11 @@ public struct PbAppleArchiveDecompressor : PbDecompressor, ErrorReportingSequenc
         try makeDecompressAndDecodeStreams()
     }
     
-    public mutating func open(file atPath: String, permissions: FilePermissions? = nil) throws {
+    public mutating func open(file atPath: String) throws {
+        try open(file: atPath, permissions: nil)
+    }
+    
+    public mutating func open(file atPath: String, permissions: FilePermissions?) throws {
         try makeInputFileStream(atPath, permissions ?? FilePermissions(rawValue: 0o644))
         try makeDecompressAndDecodeStreams()
     }
