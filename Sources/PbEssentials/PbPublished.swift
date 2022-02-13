@@ -5,30 +5,26 @@
 import Combine
 import Foundation
 
-/**
- A property that can report changes to the parent.
- 
- The properties `_objectWillChange` and `_objectDidChange`should be declared
- but should never be initialized. Their initialization will take place automatically from
- the parent object (if it's an object that conforms to PbObservableObject).
- */
-public protocol PbPublishedProperty
-{
+/// A property that can report changes to the parent.
+///
+/// The properties `_objectWillChange` and `_objectDidChange`should be declared
+/// but should never be initialized. Their initialization will take place automatically from
+/// the parent object (if it's an object that conforms to PbObservableObject).
+public protocol PbPublishedProperty {
     /// Publisher for `willSet` events, in the parent observable object
-    var _objectWillChange : ObservableObjectPublisher? { get nonmutating set }
+    var _objectWillChange: ObservableObjectPublisher? { get nonmutating set }
 
     /// Publisher for `didSet` events, in the parent observable object.
-    var _objectDidChange : ObservableObjectPublisher? { get nonmutating set }
+    var _objectDidChange: ObservableObjectPublisher? { get nonmutating set }
 }
 
 @propertyWrapper
-public final class PbPublished<Value> : PbPublishedProperty
-{
+public final class PbPublished<Value>: PbPublishedProperty {
     public enum Options {
         case withLock
     }
-    
-    public var wrappedValue : Value {
+
+    public var wrappedValue: Value {
         get {
             lock?.lock()
             let v = value
@@ -38,7 +34,7 @@ public final class PbPublished<Value> : PbPublishedProperty
         set {
             _objectWillChange?.send()
             valueWillChange.send(newValue)
-            
+
             lock?.lock()
             value = newValue
             lock?.unlock()
@@ -50,7 +46,7 @@ public final class PbPublished<Value> : PbPublishedProperty
     }
 
     public lazy var projectedValue = valueWillChange.eraseToAnyPublisher()
-    
+
     public init(wrappedValue: Value, _ options: Options? = nil) {
         value = wrappedValue
         parseOptions(options)
@@ -67,23 +63,23 @@ public final class PbPublished<Value> : PbPublishedProperty
         valueDidSet!()
     }
 
-    public var _objectWillChange : ObservableObjectPublisher?
-    public var _objectDidChange : ObservableObjectPublisher?
+    public var _objectWillChange: ObservableObjectPublisher?
+    public var _objectDidChange: ObservableObjectPublisher?
 
     private lazy var valueWillChange = CurrentValueSubject<Value, Never>(value)
-    
-    private var subscriptions : [AnyCancellable?] = [nil,nil]
-    private var valueDidSet : (() -> Void)?
-    
-    private var lock : NSRecursiveLock?
-    private var value : Value
+
+    private var subscriptions: [AnyCancellable?] = [nil, nil]
+    private var valueDidSet: (() -> Void)?
+
+    private var lock: NSRecursiveLock?
+    private var value: Value
 
     private func parseOptions(_ options: Options?) {
         if options == .withLock {
             lock = NSRecursiveLock()
         }
     }
-    
+
     private func cancelSubscriptions() {
         subscriptions.enumerated().forEach({
             $0.element?.cancel()
@@ -96,12 +92,11 @@ public final class PbPublished<Value> : PbPublishedProperty
     }
 }
 
-extension PbPublished: Codable where Value: Codable
-{
+extension PbPublished: Codable where Value: Codable {
     public convenience init(from decoder: Decoder) throws {
         let value = try Value(from: decoder)
         self.init(wrappedValue: value)
-        
+
         if let value = value as? PbObservableObjectType {
             valueDidSet = { [weak self] in
                 self?.cancelSubscriptions()

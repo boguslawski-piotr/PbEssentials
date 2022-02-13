@@ -7,24 +7,22 @@ import Foundation
 extension PropertyListDecoder: PbDecoder {}
 extension PropertyListEncoder: PbEncoder {}
 
-public struct PropertyListCoder : PbCoder
-{
+public struct PropertyListCoder: PbCoder {
     private let decoder: PropertyListDecoder?
     private let encoder: PropertyListEncoder?
-    
-    public struct Box<T: Codable> : Codable
-    {
-        public let v : T
+
+    public struct Box<T: Codable>: Codable {
+        public let v: T
         public init(v: T) {
             self.v = v
         }
     }
-    
+
     public init(decoder: PropertyListDecoder? = PropertyListDecoder(), encoder: PropertyListEncoder? = PropertyListEncoder()) {
         self.decoder = decoder
         self.encoder = encoder
     }
-    
+
     public func decode<T>(_ type: T.Type, from: Data) throws -> T where T: Decodable {
         guard let decoder = decoder else { throw MachError(.invalidArgument) }
         do {
@@ -44,13 +42,12 @@ public struct PropertyListCoder : PbCoder
                 return try decoder.decode(Box<Double>.self, from: from).v as! T
             }
             return try decoder.decode(type, from: from)
-        }
-        catch {
+        } catch {
             dbg(Self.self, error)
             throw error
         }
     }
-    
+
     public func encode<T>(_ value: T) throws -> Data where T: Encodable {
         guard let encoder = encoder else { throw MachError(.invalidArgument) }
         do {
@@ -70,11 +67,9 @@ public struct PropertyListCoder : PbCoder
                 return try encoder.encode(Box<Double>(v: value))
             }
             return try encoder.encode(value)
-        }
-        catch {
+        } catch {
             dbg(Self.self, error)
             throw error
         }
     }
 }
-

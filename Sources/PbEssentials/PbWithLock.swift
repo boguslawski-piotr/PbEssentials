@@ -5,12 +5,11 @@
 import Foundation
 
 @propertyWrapper
-public struct PbWithLock<Value>
-{
+public struct PbWithLock<Value> {
     // MARK: Property wrapper
-    
+
     public let projectedValue = NSRecursiveLock()
-    public var wrappedValue : Value {
+    public var wrappedValue: Value {
         get {
             lock.lock()
             let v = _value
@@ -29,9 +28,9 @@ public struct PbWithLock<Value>
     }
 
     // MARK: Normal boxing structure
-    
-    public var lock : NSRecursiveLock { projectedValue }
-    public var value : Value {
+
+    public var lock: NSRecursiveLock { projectedValue }
+    public var value: Value {
         get { wrappedValue }
         set { wrappedValue = newValue }
     }
@@ -40,15 +39,14 @@ public struct PbWithLock<Value>
         self._value = value
     }
 
-    private var _value : Value
+    private var _value: Value
 }
 
 // MARK: NSLock / NSRecursiveLock Extensions
 
-public extension NSRecursiveLock
-{
+extension NSRecursiveLock {
     @inlinable
-    func withLock<T>(_ body: () throws -> T) rethrows -> T {
+    public func withLock<T>(_ body: () throws -> T) rethrows -> T {
         self.lock()
         defer {
             self.unlock()

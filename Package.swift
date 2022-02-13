@@ -8,7 +8,8 @@ let package = Package(
     products: [
         .library(
             name: "PbEssentials",
-            targets: ["PbEssentials"]),
+            targets: ["PbEssentials"]
+        )
     ],
     dependencies: [
         // .package(url: /* package url */, from: "1.0.0"),
@@ -17,9 +18,11 @@ let package = Package(
     targets: [
         .target(
             name: "PbEssentials",
-            dependencies: []),
+            dependencies: []
+        ),
         .testTarget(
             name: "PbEssentialsTests",
-            dependencies: ["PbEssentials"]),
+            dependencies: ["PbEssentials"]
+        ),
     ]
 )

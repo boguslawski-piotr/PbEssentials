@@ -2,25 +2,24 @@
 /// Copyright (c) Piotr Boguslawski
 /// MIT license, see License.md file for details.
 
-import Foundation
 import Combine
+import Foundation
 
 // MARK: PbOperationBase
 
-open class PbOperationBase : BlockOperation, Identifiable
-{
-    public struct Options : OptionSet {
+open class PbOperationBase: BlockOperation, Identifiable {
+    public struct Options: OptionSet {
         public let rawValue: Int
         public init(rawValue: Int) {
             self.rawValue = rawValue
         }
-        
+
         static let executeFinishedWhenAllBlocksAreFinished = Options(rawValue: 1 << 0)
     }
-    
+
     public let id = String(UUID().uuidString)
-    public let sender : UsesOperations
-    public var options : Options = []
+    public let sender: UsesOperations
+    public var options: Options = []
 
     public init(for sender: UsesOperations) {
         self.sender = sender
@@ -31,31 +30,30 @@ open class PbOperationBase : BlockOperation, Identifiable
 
 // MARK: PbOperation
 
-open class PbOperation<T> : PbOperationBase
-{
-    public typealias Result = (name : String, result : T)
-    public typealias Exception = (name : String, error : Error)
-    
-    @PbWithLock public var results : Array<Result> = []
+open class PbOperation<T>: PbOperationBase {
+    public typealias Result = (name: String, result: T)
+    public typealias Exception = (name: String, error: Error)
+
+    @PbWithLock public var results: [Result] = []
 
     override open func start() {
         results = []
         canStart()
         super.start()
     }
-    
-    private var canStartCode : ((_ op : PbOperation) -> Bool)? = nil
-    
+
+    private var canStartCode: ((_ op: PbOperation) -> Bool)? = nil
+
     open func canStart() {
         guard canStartCode != nil else { return }
-        sender.execute() {
+        sender.execute {
             if !(self.canStartCode?(self) ?? true) {
                 self.cancel()
             }
         }
     }
 
-    open func canStart(code : @escaping (_ op : PbOperation) -> Bool)  -> PbOperation {
+    open func canStart(code: @escaping (_ op: PbOperation) -> Bool) -> PbOperation {
         canStartCode = code
         return self
     }
@@ -65,37 +63,35 @@ open class PbOperation<T> : PbOperationBase
         executeFinished(nil)
         cleanup()
     }
-    
-    private var cleanupCode : ((_ op : PbOperation) -> Void)? = nil
+
+    private var cleanupCode: ((_ op: PbOperation) -> Void)? = nil
 
     open func cleanup() {
-        sender.execute() {
+        sender.execute {
             self.cleanupCode?(self)
             self.deInit()
         }
     }
 
-    open func cleanup(code : @escaping (_ op : PbOperation) -> Void)  -> PbOperation {
+    open func cleanup(code: @escaping (_ op: PbOperation) -> Void) -> PbOperation {
         cleanupCode = code
         return self
     }
 
-    private var uniqueName : String {
+    private var uniqueName: String {
         UUID().uuidString
     }
-    
-    public func block(code: @escaping (_ op : PbOperation) throws -> T) -> PbOperation {
+
+    public func block(code: @escaping (_ op: PbOperation) throws -> T) -> PbOperation {
         return block(uniqueName, code: code)
     }
-    
-    open func block(_ name : String, code: @escaping (_ op : PbOperation) throws -> T) -> PbOperation {
-        addExecutionBlock
-        {
+
+    open func block(_ name: String, code: @escaping (_ op: PbOperation) throws -> T) -> PbOperation {
+        addExecutionBlock {
             do {
                 let result = (name, try code(self))
                 self.executeFinished(result)
-            }
-            catch {
+            } catch {
                 self.executeThrown((name, error))
             }
         }
@@ -103,30 +99,27 @@ open class PbOperation<T> : PbOperationBase
     }
 
     private let maxiumTimeToWaitForBlockToRespondToCancellation = TimeInterval(1.0)
-    
-    public func asyncBlock(code: @escaping (_ op : PbOperation) async throws -> T) -> PbOperation {
+
+    public func asyncBlock(code: @escaping (_ op: PbOperation) async throws -> T) -> PbOperation {
         asyncBlock(uniqueName, code: code)
     }
-    
-    open func asyncBlock(_ name : String, code: @escaping (_ op : PbOperation) async throws -> T) -> PbOperation {
-        addExecutionBlock
-        {
+
+    open func asyncBlock(_ name: String, code: @escaping (_ op: PbOperation) async throws -> T) -> PbOperation {
+        addExecutionBlock {
             do {
                 let semaphore = DispatchSemaphore(value: 0)
-                let task = Task<Void, Never>()
-                {
+                let task = Task<Void, Never> {
                     defer {
                         semaphore.signal()
                     }
                     do {
                         let result = (name, try await code(self))
                         self.executeFinished(result)
-                    }
-                    catch {
+                    } catch {
                         self.executeThrown((name, error))
                     }
                 }
-                
+
                 var canceledAt = Date.distantPast
                 while true {
                     if semaphore.wait(timeout: .now() + .miliseconds(1)) == .timedOut {
@@ -143,60 +136,57 @@ open class PbOperation<T> : PbOperationBase
                     }
                     break
                 }
-            }
-            catch {
+            } catch {
                 self.executeThrown((name, error))
             }
         }
         return self
     }
 
-    private var methods : Set<String> = []
-    
-    public func execute(code : @escaping () throws -> Void) {
+    private var methods: Set<String> = []
+
+    public func execute(code: @escaping () throws -> Void) {
         execute(uniqueName, code: code)
     }
-    
-    open func execute(_ name : String, code : @escaping () throws -> Void) {
+
+    open func execute(_ name: String, code: @escaping () throws -> Void) {
         sender.messages.read(name) { _ in
             do {
                 try code()
-            }
-            catch {
+            } catch {
                 self.executeThrown((name, error))
             }
         }
         sender.messages.send(name, data: nil)
     }
-    
+
     open func execute(_ name: String, data: Any? = nil) {
         assert(methods.contains(name))
         sender.messages.send(name + id, data: data)
     }
-    
-    public func method(_ name : String, code : @escaping () throws -> Void) -> PbOperation {
-        return method(name) { (_ : Any?) in try code() }
+
+    public func method(_ name: String, code: @escaping () throws -> Void) -> PbOperation {
+        return method(name) { (_: Any?) in try code() }
     }
-    
-    open func method<T>(_ name : String, code : @escaping (T) throws -> Void) -> PbOperation {
+
+    open func method<T>(_ name: String, code: @escaping (T) throws -> Void) -> PbOperation {
         assert(!methods.contains(name))
         if methods.insert(name).inserted {
             sender.messages.subscribe(to: name + id) { data in
                 do {
                     try code(data as! T)
-                }
-                catch {
+                } catch {
                     self.executeThrown((name, error))
                 }
             }
         }
         return self
     }
-    
+
     private lazy var executeFinished = "finished" + id
     private var finishedBlocks = 0
 
-    private func executeFinished(_ result : Result?) {
+    private func executeFinished(_ result: Result?) {
         if result != nil {
             $results.withLock {
                 results.append(result!)
@@ -204,8 +194,7 @@ open class PbOperation<T> : PbOperationBase
             if finishedBlocks > 0 && !options.contains(.executeFinishedWhenAllBlocksAreFinished) {
                 sender.messages.send(executeFinished, data: result)
             }
-        }
-        else {
+        } else {
             if finishedBlocks > 0 && options.contains(.executeFinishedWhenAllBlocksAreFinished) {
                 for result in results {
                     sender.messages.send(executeFinished, data: result)
@@ -215,15 +204,15 @@ open class PbOperation<T> : PbOperationBase
         }
     }
 
-    public func finished(code : @escaping () -> Void)  -> PbOperation {
-        return finished() { _ in code() }
-    }
-    
-    public func finished(code : @escaping (T) -> Void)  -> PbOperation {
-        return finished() { (_, result) in code(result) }
+    public func finished(code: @escaping () -> Void) -> PbOperation {
+        return finished { _ in code() }
     }
 
-    open func finished(code : @escaping (String, T) -> Void)  -> PbOperation {
+    public func finished(code: @escaping (T) -> Void) -> PbOperation {
+        return finished { (_, result) in code(result) }
+    }
+
+    open func finished(code: @escaping (String, T) -> Void) -> PbOperation {
         sender.messages.subscribe(to: executeFinished) { data in
             let data = data as! Result
             code(data.name, data.result)
@@ -234,17 +223,17 @@ open class PbOperation<T> : PbOperationBase
 
     private lazy var executeThrown = "thrown" + id
     private var thrownBlocks = 0
-    
-    private func executeThrown(_ data : Exception) {
+
+    private func executeThrown(_ data: Exception) {
         guard thrownBlocks > 0 else { return }
         sender.messages.send(executeThrown, data: data)
     }
 
-    public func thrown(code : @escaping (Error) -> Void)  -> PbOperation {
-        return thrown() { (_, error) in code(error) }
+    public func thrown(code: @escaping (Error) -> Void) -> PbOperation {
+        return thrown { (_, error) in code(error) }
     }
 
-    open func thrown(code : @escaping (String, Error) -> Void)  -> PbOperation {
+    open func thrown(code: @escaping (String, Error) -> Void) -> PbOperation {
         sender.messages.subscribe(to: executeThrown) { data in
             let data = data as! Exception
             code(data.name, data.error)
@@ -259,18 +248,18 @@ open class PbOperation<T> : PbOperationBase
         }
         return self
     }
-    
+
     public func qualityOfService(_ qualityOfService: QualityOfService) -> PbOperation {
         self.qualityOfService = qualityOfService
         return self
     }
-    
+
     public func queuePriority(_ queuePriority: PbOperation.QueuePriority) -> PbOperation {
         self.queuePriority = queuePriority
         return self
     }
-    
-    public func options(_ options : Options) -> PbOperation {
+
+    public func options(_ options: Options) -> PbOperation {
         self.options = options
         return self
     }
@@ -280,7 +269,7 @@ open class PbOperation<T> : PbOperationBase
         finishedBlocks = 0
         thrownBlocks = 0
         if methods.count > 0 {
-            sender.messages.cancelSubscriptions(for: methods.compactMap( { return $0 + id } ))
+            sender.messages.cancelSubscriptions(for: methods.compactMap({ return $0 + id }))
             methods = []
         }
     }
@@ -292,29 +281,28 @@ open class PbOperation<T> : PbOperationBase
 
 // MARK: UsesOperations
 
-open class UsesOperations: UsesMessages
-{
-    open func operationQueueWithUpTo(threads : Int) -> OperationQueue {
+open class UsesOperations: UsesMessages {
+    open func operationQueueWithUpTo(threads: Int) -> OperationQueue {
         let oq = OperationQueue()
         oq.maxConcurrentOperationCount = threads
         return oq
     }
-    
+
     public lazy var operationQueue1 = operationQueueWithUpTo(threads: 1)
-    public lazy var operationQueue  = OperationQueue()
+    public lazy var operationQueue = OperationQueue()
 
     open func operation<T>() -> PbOperation<T> {
         return PbOperation<T>(for: self)
     }
-    
-    open func operation<T>(code: @escaping (_ op : PbOperation<T>) throws -> T) -> PbOperation<T> {
+
+    open func operation<T>(code: @escaping (_ op: PbOperation<T>) throws -> T) -> PbOperation<T> {
         return PbOperation<T>(for: self).block("_", code: { op in try code(op) })
     }
 
-    open func asyncOperation<T>(code: @escaping (_ op : PbOperation<T>) async throws -> T) -> PbOperation<T> {
+    open func asyncOperation<T>(code: @escaping (_ op: PbOperation<T>) async throws -> T) -> PbOperation<T> {
         return PbOperation<T>(for: self).asyncBlock("_", code: { op in try await code(op) })
     }
-    
+
     /// A convenient procedure that allows you to execute a piece of code on the main thread of the program, no matter what thread you are currently on.
     public func execute(_ code: @escaping () -> Void) {
         let name = UUID().uuidString
@@ -324,10 +312,9 @@ open class UsesOperations: UsesMessages
 
     public func execute(_ code: @escaping () throws -> Void) throws {
         let name = UUID().uuidString
-        var err : Error?
+        var err: Error?
         messages.read(name, from: self) { _ in
-            do { try code() }
-            catch { err = error }
+            do { try code() } catch { err = error }
         }
         messages.send(name)
         if err != nil {
@@ -343,10 +330,9 @@ open class UsesOperations: UsesMessages
 
     public func execute<T>(with data: T, _ code: @escaping (T) throws -> Void) throws {
         let name = UUID().uuidString
-        var err : Error?
+        var err: Error?
         messages.read(name, from: self) { data in
-            do { try code(data as! T) }
-            catch { err = error }
+            do { try code(data as! T) } catch { err = error }
         }
         messages.send(name, data: data)
         if err != nil {
@@ -357,27 +343,26 @@ open class UsesOperations: UsesMessages
 
 // MARK: Basic tests
 
-public class UsesOperationsTests : UsesOperations
-{
+public class UsesOperationsTests: UsesOperations {
     struct SomeData {
-        var name : String
-        var data : Int
+        var name: String
+        var data: Int
     }
-    
+
     public func test1() {
-        
+
         execute {
             dbg("execute test, from main thread")
         }
-        
+
         // simple operation
-        
-        operationQueue1 += operation() { op in
+
+        operationQueue1 += operation { op in
             dbg("simple")
         }
-        
+
         // complex ;) operation
-        
+
         let Test = String("test")
         let Test2 = String("test2")
 
@@ -408,10 +393,10 @@ public class UsesOperationsTests : UsesOperations
                 dbg("third started")
                 throw PbError("third error!")
             }
-        
+
             .asyncBlock("fourth (async)") { op in
                 dbg("fourth (async) started")
-                try await Task.sleep(nanoseconds: 4*1_000_000_000)
+                try await Task.sleep(nanoseconds: 4 * 1_000_000_000)
                 dbg("fourth (async) ended")
                 return nil
             }
@@ -423,7 +408,7 @@ public class UsesOperationsTests : UsesOperations
                 dbg("method test2")
                 throw PbError("test2")
             }
-        
+
             .finished {
                 dbg("general finished")
             }
@@ -441,14 +426,13 @@ public class UsesOperationsTests : UsesOperations
 
             .options([.executeFinishedWhenAllBlocksAreFinished])
             .qualityOfService(.userInitiated)
-        
+
         operationQueue1
-        + oper
-        += operation() { op in
-            dbg("this should print at the very end, because queue is set to one thread")
-        }
-        
-        Task() {
+            + oper += operation { op in
+                dbg("this should print at the very end, because queue is set to one thread")
+            }
+
+        Task {
             oper.waitUntilFinished()
             dbg("oper finished")
         }

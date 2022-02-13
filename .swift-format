@@ -3,15 +3,15 @@
     "accessLevel" : "private"
   },
   "indentation" : {
-    "spaces" : 2
+    "spaces" : 4
   },
   "indentConditionalCompilationBlocks" : true,
   "indentSwitchCaseLabels" : false,
   "lineBreakAroundMultilineExpressionChainComponents" : false,
   "lineBreakBeforeControlFlowKeywords" : false,
-  "lineBreakBeforeEachArgument" : false,
-  "lineBreakBeforeEachGenericRequirement" : false,
-  "lineLength" : 100,
+  "lineBreakBeforeEachArgument" : true,
+  "lineBreakBeforeEachGenericRequirement" : true,
+  "lineLength" : 160,
   "maximumBlankLines" : 1,
   "prioritizeKeepingFunctionOutputTogether" : false,
   "respectsExistingLineBreaks" : true,
@@ -45,12 +45,12 @@
     "UseEarlyExits" : false,
     "UseLetInEveryBoundCaseVariable" : true,
     "UseShorthandTypeNames" : true,
-    "UseSingleLinePropertyGetter" : true,
+    "UseSingleLinePropertyGetter" : false,
     "UseSynthesizedInitializer" : true,
     "UseTripleSlashForDocumentationComments" : true,
     "UseWhereClausesInForLoops" : false,
     "ValidateDocumentationComments" : false
   },
-  "tabWidth" : 8,
+  "tabWidth" : 4,
   "version" : 1
 }

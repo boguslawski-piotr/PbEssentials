@@ -4,9 +4,8 @@
 
 import Foundation
 
-public extension Encodable
-{
-    func encoded(using encoder: PbEncoder = JSONCoder(decoder: nil)) throws -> Data {
+extension Encodable {
+    public func encoded(using encoder: PbEncoder = JSONCoder(decoder: nil)) throws -> Data {
         try encoder.encode(self)
     }
 }

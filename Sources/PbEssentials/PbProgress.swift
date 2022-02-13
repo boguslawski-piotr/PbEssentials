@@ -2,60 +2,57 @@
 /// Copyright (c) Piotr Boguslawski
 /// MIT license, see License.md file for details.
 
-import Foundation
 import Combine
+import Foundation
 
-public protocol PbProgress
-{
-    var total : Int { get set }
-    var completed : Int { get set }
-    var description : String { get set }
+public protocol PbProgress {
+    var total: Int { get set }
+    var completed: Int { get set }
+    var description: String { get set }
 }
 
-public extension PbProgress
-{
-    var percent : Int {
+extension PbProgress {
+    public var percent: Int {
         total != 0 ? Int((Double(completed) / Double(total) * 100.0).rounded()) : 0
     }
-    
-    mutating func step(_ step: Int, of total: Int, _ description: String = "") {
+
+    public mutating func step(_ step: Int, of total: Int, _ description: String = "") {
         self.total = total
         self.completed = step
         self.description = description
     }
-    
-    mutating func start(total : Int) {
+
+    public mutating func start(total: Int) {
         self.total = total
         self.completed = 0
         self.description = ""
     }
-    
-    mutating func inc(by: Int = 1) {
+
+    public mutating func inc(by: Int = 1) {
         self.completed += by
     }
-    
-    mutating func description(_ description: String = "") {
+
+    public mutating func description(_ description: String = "") {
         self.description = description
     }
-    
-    mutating func clear() {
+
+    public mutating func clear() {
         self.total = 0
         self.completed = 0
         self.description = ""
     }
-    
-    mutating func update(from: PbProgress) {
+
+    public mutating func update(from: PbProgress) {
         self.total = from.total
         self.completed = from.completed
         self.description = from.description
     }
 }
 
-public struct PbSimpleProgress: PbProgress
-{
-    public var total : Int = 0
-    public var completed : Int = 0
-    public var description : String = ""
+public struct PbSimpleProgress: PbProgress {
+    public var total: Int = 0
+    public var completed: Int = 0
+    public var description: String = ""
 
     public init(total: Int = 0, completed: Int = 0, description: String = "") {
         self.total = total
@@ -64,36 +61,36 @@ public struct PbSimpleProgress: PbProgress
     }
 }
 
-public class PbObservableProgress: PbProgress, PbObservableObject
-{
-    @PbPublished public var total : Int = 0
-    @PbPublished public var completed : Int = 0
-    @PbPublished public var description : String = ""
-    
+public class PbObservableProgress: PbProgress, PbObservableObject {
+    @PbPublished public var total: Int = 0
+    @PbPublished public var completed: Int = 0
+    @PbPublished public var description: String = ""
+
     public init(total: Int = 0, completed: Int = 0, description: String = "") {
         self.total = total
         self.completed = completed
         self.description = description
     }
-    
+
     @discardableResult
     public func onChange<T>(publishTo observableObject: T?) -> PbObservableProgress
     where T: PbObservableObject, T.ObjectWillChangePublisher == ObservableObjectPublisher {
         return onChange { observableObject?.objectWillChange.send() }
     }
-    
+
     @discardableResult
     public func onChange(action: @escaping () -> Void) -> PbObservableProgress {
         subscriptions.append(
             objectWillChange
                 .sink {
                     action()
-                })
+                }
+        )
         return self
     }
-    
-    private var subscriptions : [AnyCancellable?] = []
-    
+
+    private var subscriptions: [AnyCancellable?] = []
+
     deinit {
         subscriptions.enumerated().forEach({
             $0.element?.cancel()
