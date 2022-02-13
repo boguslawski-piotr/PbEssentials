@@ -4,8 +4,6 @@
 
 import Foundation
 
-// MARK: Task extensions
-
 public extension Task
 {
     typealias NoResultNoError = Task<Void, Never>

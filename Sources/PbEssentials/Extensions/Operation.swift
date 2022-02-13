@@ -8,17 +8,17 @@ extension Operation
 {
     @inlinable
     open func sleep(nanoseconds duration: UInt64) throws {
-        try sleep(forTimeInterval: TimeInterval(Double(duration) / 1_000_000_000.0))
+        try sleep(for: TimeInterval(Double(duration) / 1_000_000_000.0))
     }
     
     @inlinable
-    open func sleep(forTimeInterval ti: TimeInterval) throws {
-        if !sleep(forTimeInterval: ti, checkingCancellation: true) {
+    open func sleep(for ti: TimeInterval) throws {
+        if !sleep(for: ti, checkingCancellation: true) {
             throw CancellationError()
         }
     }
     
-    open func sleep(forTimeInterval ti: TimeInterval, checkingCancellation : Bool) -> Bool {
+    open func sleep(for ti: TimeInterval, checkingCancellation : Bool) -> Bool {
         if !checkingCancellation {
             Thread.sleep(forTimeInterval: ti)
         }

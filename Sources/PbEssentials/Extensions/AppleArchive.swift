@@ -9,24 +9,12 @@ import AppleArchive
 #if !targetEnvironment(simulator)
 
 @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
-public struct PbAppleArchiveCompressor : PbCompressor
+public struct PbAppleArchiveCompressor
 {
-    public init(compression: PbCompression) {
-        switch compression {
-        case .fast:
-            self.compression = .lz4
-        case .strong:
-            self.compression = .lzma
-        }
-    }
-    
-    public init(compression: ArchiveCompression? = nil) {
-        self.compression = compression
-    }
-    
     public init(toFile atPath: String, compression: ArchiveCompression? = nil, permissions: FilePermissions? = nil) throws {
         self.compression = compression
-        try create(file: atPath, permissions: permissions)
+        try makeOutputFileStream(atPath, permissions ?? FilePermissions(rawValue: 0o644))
+        try makeCompressAndEncodeStreams()
     }
     
     public init<Stream>(toStream stream: Stream, compression: ArchiveCompression? = nil) throws where Stream: AnyObject, Stream: ArchiveByteStreamProtocol {
@@ -35,21 +23,12 @@ public struct PbAppleArchiveCompressor : PbCompressor
         try makeCompressAndEncodeStreams()
     }
     
-    public mutating func create(file atPath: String) throws {
-        try create(file: atPath, permissions: nil)
-    }
-    
-    public mutating func create(file atPath: String, permissions: FilePermissions?) throws {
-        try makeOutputFileStream(atPath, permissions ?? FilePermissions(rawValue: 0o644))
-        try makeCompressAndEncodeStreams()
-    }
-    
-    public mutating func append(contentsOf url: URL, withName: String? = nil) throws {
+    public mutating func append(contentsOf url: URL, withName: String? = nil) throws -> Self {
         let data = try Data(contentsOf: url)
-        try append(data: data, withName: withName ?? url.lastPathComponent)
+        return try append(data: data, withName: withName ?? url.lastPathComponent)
     }
     
-    public mutating func append(data: Data, withName: String? = nil) throws {
+    public mutating func append(data: Data, withName: String? = nil) throws -> Self {
         guard encodeStream != nil else { throw ArchiveError.invalidValue }
         
         let header = ArchiveHeader()
@@ -65,6 +44,8 @@ public struct PbAppleArchiveCompressor : PbCompressor
             let rawBuffer = UnsafeRawBufferPointer(ptr)
             try encodeStream!.writeBlob(key: .init("DAT"), from: rawBuffer)
         }
+        
+        return self
     }
     
     public mutating func close() throws {
@@ -102,25 +83,15 @@ public struct PbAppleArchiveCompressor : PbCompressor
 }
 
 @available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
-public struct PbAppleArchiveDecompressor : PbDecompressor, ErrorReportingSequence, AsyncSequence, ErrorReportingIteratorProtocol, ThrowingIteratorProtocol
+public struct PbAppleArchiveDecompressor : ErrorReportingSequence, AsyncSequence, ErrorReportingIteratorProtocol, ThrowingIteratorProtocol
 {
-    public init() {}
-    
     public init(fromFile atPath: String, permissions: FilePermissions? = nil) throws {
-        try open(file: atPath, permissions: permissions)
+        try makeInputFileStream(atPath, permissions ?? FilePermissions(rawValue: 0o644))
+        try makeDecompressAndDecodeStreams()
     }
     
     public init<Stream>(fromStream stream : Stream) throws where Stream: AnyObject, Stream: ArchiveByteStreamProtocol {
         inputStream = ArchiveByteStream.customStream(instance: stream)
-        try makeDecompressAndDecodeStreams()
-    }
-    
-    public mutating func open(file atPath: String) throws {
-        try open(file: atPath, permissions: nil)
-    }
-    
-    public mutating func open(file atPath: String, permissions: FilePermissions?) throws {
-        try makeInputFileStream(atPath, permissions ?? FilePermissions(rawValue: 0o644))
         try makeDecompressAndDecodeStreams()
     }
     
@@ -130,7 +101,7 @@ public struct PbAppleArchiveDecompressor : PbDecompressor, ErrorReportingSequenc
 
     public mutating func readWithName() throws -> (Data?, String) {
         let data = try _next()
-        return (data, lastStringPatField)
+        return (data, lastNameFromPatField)
     }
 
     public mutating func close() throws {
@@ -207,10 +178,10 @@ public struct PbAppleArchiveDecompressor : PbDecompressor, ErrorReportingSequenc
         }
     }
     
-    private var lastStringPatField = ""
+    private var lastNameFromPatField = ""
     
     private mutating func _next() throws -> Data? {
-        lastStringPatField = ""
+        lastNameFromPatField = ""
 
         guard let header = try decodeStream?.readHeader() else {
             try close()
@@ -219,7 +190,7 @@ public struct PbAppleArchiveDecompressor : PbDecompressor, ErrorReportingSequenc
         
         let patField = header.field(forKey: .init("PAT"))
         if case .string(_, let name) = patField {
-            lastStringPatField = name
+            lastNameFromPatField = name
         }
 
         let datField = header.field(forKey: .init("DAT"))

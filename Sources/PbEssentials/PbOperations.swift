@@ -400,7 +400,7 @@ public class UsesOperationsTests : UsesOperations
             }
             .block("second") { op in
                 dbg("second started")
-                try op.sleep(forTimeInterval: 1)
+                try op.sleep(for: .seconds(1))
                 dbg("second ended")
                 return SomeData(name: "block(second)", data: 1)
             }

@@ -3,61 +3,23 @@
 /// MIT license, see License.md file for details.
 
 import Foundation
-import AppleArchive
 
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
 public extension Data
 {
-#if !targetEnvironment(simulator)
-
-    typealias Compression = AppleArchive.ArchiveCompression
-
-    func write(to url: URL, compression: Compression) throws {
-        if compression == .none {
-            return try write(to: url)
-        }
-        
-        var cf = try PbAppleArchiveCompressor(toFile: url.path, compression: compression)
-        try cf.append(data: self)
-        try cf.close()
+    func write(to url: URL, compressor: PbCompressor, options: Data.WritingOptions = []) throws {
+        let cdata = try compressor.compress(data: self)
+        try cdata.write(to: url, options: options)
     }
 
-    init(contentsOf url: URL, decompress: Bool) throws {
-        if !decompress {
-            try self.init(contentsOf: url)
-        }
-        else {
-            var df = try PbAppleArchiveDecompressor(fromFile: url.path)
-            self = try df.read() ?? Data()
-            try df.close()
-        }
+    init(contentsOf url: URL, decompressor: PbDecompressor, options: Data.ReadingOptions = []) throws {
+        try self.init(contentsOf: url, options: options)
+        self = try decompressor.decompress(data: self)
     }
-    
-#endif
 }
 
 public extension Data
 {
-    func write(to url: URL, compressor: PbCompressor?) throws {
-        if compressor == nil {
-            return try write(to: url)
-        }
-        
-        var cf = compressor!
-        try cf.create(file: url.path)
-        try cf.append(data: self, withName: nil)
-        try cf.close()
-    }
-
-    init(contentsOf url: URL, decompressor: PbDecompressor?) throws {
-        if decompressor == nil {
-            try self.init(contentsOf: url)
-        }
-        else {
-            var df = decompressor!
-            try df.open(file: url.path)
-            self = try df.read() ?? Data()
-            try df.close()
-        }
+    func decoded<T: Decodable>(as type: T.Type = T.self, using decoder: PbDecoder = JSONCoder(encoder: nil)) throws -> T {
+        try decoder.decode(T.self, from: self)
     }
 }

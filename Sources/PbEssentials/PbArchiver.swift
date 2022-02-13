@@ -3,7 +3,6 @@
 /// MIT license, see License.md file for details.
 
 import Foundation
-import System
 
 public enum PbCompression
 {
@@ -12,41 +11,36 @@ public enum PbCompression
 
 public protocol PbCompressor
 {
-    init(compression: PbCompression)
-    mutating func create(file atPath: String) throws
-    mutating func append(contentsOf url: URL, withName: String?) throws
-    mutating func append(data: Data, withName: String?) throws
-    mutating func close() throws
+    /// Should encode and compress item of type T into object of type Data.
+    func compress<T>(_ item: T) throws -> Data where T: Encodable
+    
+    /// Should compress binary data.
+    func compress(data: Data) throws -> Data
 }
 
 public protocol PbDecompressor
 {
-    init()
-    mutating func open(file atPath: String) throws
-    mutating func read() throws -> Data?
-    mutating func readWithName() throws -> (Data?, String)
-    mutating func close() throws
+    /// Should decompress and decode data into object of type T.
+    func decompress<T>(itemOf type: T.Type, from data: Data) throws -> T where T: Decodable
+    
+    /// Should decompress binary data,
+    func decompress(data: Data) throws -> Data
 }
 
-public protocol PbArchiver
-{
-    func makeCompressor() -> PbCompressor
-    func makeDecompressor() -> PbDecompressor
-}
+public protocol PbArchiver : PbCompressor, PbDecompressor {}
 
-public struct PbSimpleArchiver<Compressor: PbCompressor, Decompressor: PbDecompressor> : PbArchiver
+open class PbArchiverBase : PbArchiver
 {
-    let compression : PbCompression
-    
-    public init(compression: PbCompression) {
-        self.compression = compression
+    open lazy var coder = PropertyListCoder()
+
+    open func compress<T>(_ item: T) throws -> Data where T: Encodable {
+        try compress(data: try coder.encode(item))
     }
     
-    public func makeCompressor() -> PbCompressor {
-        Compressor.init(compression: compression)
+    open func decompress<T>(itemOf type: T.Type, from data: Data) throws -> T where T: Decodable {
+        try coder.decode(type, from: try decompress(data: data))
     }
     
-    public func makeDecompressor() -> PbDecompressor {
-        Decompressor.init()
-    }
+    open func compress(data: Data) throws -> Data { fatalError("Abstract!") }
+    open func decompress(data: Data) throws -> Data { fatalError("Abstract!") }
 }

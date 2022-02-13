@@ -20,6 +20,34 @@ final class PbEssentialsTests: XCTestCase
         dbg(decryptedSecret, "==", secret)
         XCTAssert(decryptedSecret == secret)
     }
+    
+    func testPbSimpleArchiver() throws {
+        let archiver = PbSimpleArchiver(compression: .fast)
+
+        let sourceString =
+            """
+            Lorem ipsum dolor sit amet consectetur adipiscing elit mi
+            nibh ornare proin blandit diam ridiculus, faucibus mus
+            dui eu vehicula nam donec dictumst sed vivamus bibendum
+            aliquet efficitur. Felis imperdiet sodales dictum morbi
+            vivamus augue dis duis aliquet velit ullamcorper porttitor,
+            lobortis dapibus hac purus aliquam natoque iaculis blandit
+            montes nunc pretium.
+            """
+        let sourceData = sourceString.data(using: .utf8)!
+        
+        
+        let cdata = try archiver.compress(data: sourceData)
+        let destinationData = try archiver.decompress(data: cdata)
+        
+        XCTAssert(destinationData == sourceData)
+        XCTAssert(String(data: destinationData, encoding: .utf8) == sourceString)
+        
+        let cdata1 = try archiver.compress(sourceString)
+        let destinationString = try archiver.decompress(itemOf: String.self, from: cdata1)
+        dbg(destinationString)
+        XCTAssert(destinationString == sourceString)
+    }
 }
 
 // MARK:
