@@ -11,41 +11,41 @@ public protocol PbProgress {
     var description: String { get set }
 }
 
-extension PbProgress {
-    public var percent: Int {
+public extension PbProgress {
+    var percent: Int {
         total != 0 ? Int((Double(completed) / Double(total) * 100.0).rounded()) : 0
     }
 
-    public mutating func step(_ step: Int, of total: Int, _ description: String = "") {
+    mutating func step(_ step: Int, of total: Int, _ description: String = "") {
         self.total = total
-        self.completed = step
+        completed = step
         self.description = description
     }
 
-    public mutating func start(total: Int) {
+    mutating func start(total: Int) {
         self.total = total
-        self.completed = 0
-        self.description = ""
+        completed = 0
+        description = ""
     }
 
-    public mutating func inc(by: Int = 1) {
-        self.completed += by
+    mutating func inc(by: Int = 1) {
+        completed += by
     }
 
-    public mutating func description(_ description: String = "") {
+    mutating func description(_ description: String = "") {
         self.description = description
     }
 
-    public mutating func clear() {
-        self.total = 0
-        self.completed = 0
-        self.description = ""
+    mutating func clear() {
+        total = 0
+        completed = 0
+        description = ""
     }
 
-    public mutating func update(from: PbProgress) {
-        self.total = from.total
-        self.completed = from.completed
-        self.description = from.description
+    mutating func update(from: PbProgress) {
+        total = from.total
+        completed = from.completed
+        description = from.description
     }
 }
 
@@ -73,13 +73,12 @@ public class PbObservableProgress: PbProgress, PbObservableObject {
     }
 
     @discardableResult
-    public func onChange<T>(publishTo observableObject: T?) -> PbObservableProgress
-    where T: PbObservableObject, T.ObjectWillChangePublisher == ObservableObjectPublisher {
-        return onChange { observableObject?.objectWillChange.send() }
+    public func onChange<T>(publishTo observableObject: T?) -> Self where T: PbObservableObject, T.ObjectWillChangePublisher == ObservableObjectPublisher {
+        onChange { observableObject?.objectWillChange.send() }
     }
 
     @discardableResult
-    public func onChange(action: @escaping () -> Void) -> PbObservableProgress {
+    public func onChange(action: @escaping () -> Void) -> Self {
         subscriptions.append(
             objectWillChange
                 .sink {
@@ -92,9 +91,9 @@ public class PbObservableProgress: PbProgress, PbObservableObject {
     private var subscriptions: [AnyCancellable?] = []
 
     deinit {
-        subscriptions.enumerated().forEach({
+        subscriptions.enumerated().forEach {
             $0.element?.cancel()
             subscriptions[$0.offset] = nil
-        })
+        }
     }
 }

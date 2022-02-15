@@ -5,13 +5,29 @@
 import Compression
 import Foundation
 
-public final class PbSimpleArchiver: PbArchiverBase {
-    private let compression: PbCompression
-    private let pageSize: Int
+public struct PbSimpleCompressorDecompressor: PbCompressorDecompressor {
+    public var compression: PbCompression
+    public var pageSize: Int
 
     public init(compression: PbCompression = .strong, pageSize: Int = 32768) {
         self.compression = compression
         self.pageSize = pageSize
+    }
+
+    public func compress(data: Data) throws -> Data {
+        var index = 0
+        let filter = try InputFilter(.compress, using: compressionAlgorithm) { (length: Int) -> Data? in
+            return self.read(from: data, count: length, updating: &index)
+        }
+        return try process(filter)
+    }
+    
+    public func decompress(data: Data) throws -> Data {
+        var index = 0
+        let filter = try InputFilter(.decompress, using: compressionAlgorithm) { (length: Int) -> Data? in
+            return self.read(from: data, count: length, updating: &index)
+        }
+        return try process(filter)
     }
 
     private var compressionAlgorithm: Algorithm { compression == .fast ? .lz4 : .lzma }
@@ -29,21 +45,5 @@ public final class PbSimpleArchiver: PbArchiverBase {
             result.append(page)
         }
         return result
-    }
-
-    public override func compress(data: Data) throws -> Data {
-        var index = 0
-        let filter = try InputFilter(.compress, using: compressionAlgorithm) { (length: Int) -> Data? in
-            return self.read(from: data, count: length, updating: &index)
-        }
-        return try process(filter)
-    }
-
-    public override func decompress(data: Data) throws -> Data {
-        var index = 0
-        let filter = try InputFilter(.decompress, using: compressionAlgorithm) { (length: Int) -> Data? in
-            return self.read(from: data, count: length, updating: &index)
-        }
-        return try process(filter)
     }
 }

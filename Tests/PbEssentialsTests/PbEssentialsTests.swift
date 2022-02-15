@@ -12,17 +12,17 @@ final class PbEssentialsTests: XCTestCase {
         let secret = "This is a very sensitive message ;)"
 
         let ekey = try PbSimpleCipher.makeKey(using: password)
-        let encryptedSecret = try PbSimpleCipher(ekey).encrypt(secret)
+        let encryptedSecret = try secret.encrypt(using: PbSimpleCipher(ekey))
 
         let dkey = try PbSimpleCipher.makeKey(using: password)
-        let decryptedSecret = try PbSimpleCipher(dkey).decrypt(itemOf: String.self, from: encryptedSecret)
+        let decryptedSecret = try encryptedSecret.decrypt(as: String.self, using: PbSimpleCipher(dkey))
 
         dbg(decryptedSecret, "==", secret)
         XCTAssert(decryptedSecret == secret)
     }
 
-    func testPbSimpleArchiver() throws {
-        let archiver = PbSimpleArchiver(compression: .fast)
+    func testPbSimpleCompressorDecompressor() throws {
+        let compressorDecompressor = PbSimpleCompressorDecompressor(compression: .fast)
 
         let sourceString =
             """
@@ -36,14 +36,15 @@ final class PbEssentialsTests: XCTestCase {
             """
         let sourceData = sourceString.data(using: .utf8)!
 
-        let cdata = try archiver.compress(data: sourceData)
-        let destinationData = try archiver.decompress(data: cdata)
+        let cdata = try compressorDecompressor.compress(data: sourceData)
+        let destinationData = try compressorDecompressor.decompress(data: cdata)
 
         XCTAssert(destinationData == sourceData)
         XCTAssert(String(data: destinationData, encoding: .utf8) == sourceString)
 
-        let cdata1 = try archiver.compress(sourceString)
-        let destinationString = try archiver.decompress(itemOf: String.self, from: cdata1)
+        let cdata1 = try sourceString.compress(using: compressorDecompressor)
+        let destinationString = try cdata1.decompress(as: String.self, using: compressorDecompressor)
+        
         dbg(destinationString)
         XCTAssert(destinationString == sourceString)
     }

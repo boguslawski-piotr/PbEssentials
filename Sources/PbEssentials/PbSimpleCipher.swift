@@ -15,22 +15,22 @@ import Security
 ///     <key>keychain-access-groups</key>
 ///     <array/>
 ///
-public final class PbSimpleCipher: PbCipherBase {
+public struct PbSimpleCipher: PbCipher {
     // MARK: Encryption / decryption
 
     public typealias SymmetricKey = CryptoKit.SymmetricKey
 
-    private let key: SymmetricKey
+    public let key: SymmetricKey
 
     public init(_ key: SymmetricKey) {
         self.key = key
     }
 
-    public override func encrypt<T>(data: T) throws -> Data where T: DataProtocol {
+    public func encrypt<T>(data: T) throws -> Data where T: DataProtocol {
         try ChaChaPoly.seal(data, using: key).combined
     }
 
-    public override func decrypt<T>(data: T) throws -> Data where T: DataProtocol {
+    public func decrypt<T>(data: T) throws -> Data where T: DataProtocol {
         let sealedBox = try ChaChaPoly.SealedBox(combined: data)
         return try ChaChaPoly.open(sealedBox, using: key)
     }

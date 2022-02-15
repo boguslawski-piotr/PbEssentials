@@ -24,10 +24,7 @@ public protocol PbObservableObject: ObservableObject, PbObservableObjectType, Id
     var objectDidChange: ObjectDidChangePublisher { get }
 }
 
-extension PbObservableObject
-where
-    Self.ObjectWillChangePublisher == ObservableObjectPublisher,
-    Self.ObjectDidChangePublisher == ObservableObjectPublisher
+extension PbObservableObject where Self.ObjectWillChangePublisher == ObservableObjectPublisher, Self.ObjectDidChangePublisher == ObservableObjectPublisher
 {
     public var objectWillChange: ObservableObjectPublisher { observableObjectPublisher(type: .will) }
     public var objectDidChange: ObservableObjectPublisher { observableObjectPublisher(type: .did) }
@@ -35,10 +32,7 @@ where
 
 // MARK: Private implementation
 
-extension PbObservableObject
-where
-    Self.ObjectWillChangePublisher == ObservableObjectPublisher,
-    Self.ObjectDidChangePublisher == ObservableObjectPublisher
+extension PbObservableObject where Self.ObjectWillChangePublisher == ObservableObjectPublisher, Self.ObjectDidChangePublisher == ObservableObjectPublisher
 {
     fileprivate func observableObjectPublisher(type: Storage.PublisherType) -> ObservableObjectPublisher {
         // Simple concept:

@@ -7,16 +7,8 @@ import Foundation
 
 // MARK: PbObservableCollection
 
-public protocol PbObservableCollection: Collection, PbObservableObject
-where
-    SubSequence == Elements.SubSequence,
-    Indices == Elements.Indices,
-    Index == Elements.Index,
-    Iterator == Elements.Iterator,
-    ObjectWillChangePublisher == ObservableObjectPublisher,
-    ObjectDidChangePublisher == ObservableObjectPublisher
-{
-    associatedtype Elements: Collection where Elements.Element: PbObservableObject
+public protocol PbObservableCollection: Collection, PbObservableObject where Element: PbObservableObject, Index == Elements.Index, Indices == Elements.Indices, Iterator == Elements.Iterator, SubSequence == Elements.SubSequence, ObjectWillChangePublisher == ObservableObjectPublisher, ObjectDidChangePublisher == ObservableObjectPublisher {
+    associatedtype Elements: Collection
 
     var _subscriptions: [AnyCancellable?] { get set }
     var _elements: Elements { get set }
@@ -50,39 +42,32 @@ extension PbObservableCollection {
     }
 }
 
+extension PbObservableCollection {
+    public var startIndex: Index { elements.startIndex }
+    public var endIndex: Index { elements.endIndex }
+    public var indices: Indices { elements.indices }
+
+    public subscript(position: Index) -> Element { elements[position] }
+    public subscript(bounds: Range<Index>) -> SubSequence { elements[bounds] }
+
+    public func index(after i: Index) -> Index { elements.index(after: i) }
+
+    public __consuming func makeIterator() -> Iterator { elements.makeIterator() }
+}
+
 extension PbObservableCollection where Elements: Encodable, Element: Encodable {
     public func encode(to encoder: Encoder) throws {
         try elements.encode(to: encoder)
     }
 }
 
-extension PbObservableCollection {
-    public var startIndex: Index { elements.startIndex }
-    public var endIndex: Index { elements.endIndex }
-    public var indices: Indices { elements.indices }
-
-    public subscript(bounds: Range<Index>) -> SubSequence { elements[bounds] }
-    public subscript(position: Index) -> Element { elements[position] }
-
-    public func index(after i: Index) -> Index { elements.index(after: i) }
-    public func formIndex(after i: inout Index) { elements.formIndex(after: &i) }
-
-    public __consuming func makeIterator() -> Iterator { elements.makeIterator() }
-}
-
 // MARK: PbObservableRandomAccessCollection
 
-public protocol PbObservableRandomAccessCollection: PbObservableCollection, RandomAccessCollection
-where Elements: RandomAccessCollection {}
+public protocol PbObservableRandomAccessCollection: PbObservableCollection, RandomAccessCollection where Elements: RandomAccessCollection {}
 
 extension PbObservableRandomAccessCollection {
     public func index(before i: Index) -> Index { elements.index(before: i) }
-    public func formIndex(before i: inout Index) { elements.formIndex(before: &i) }
     public func index(after i: Index) -> Index { elements.index(after: i) }
-    public func formIndex(after i: inout Index) { elements.formIndex(after: &i) }
-
-    public func index(_ i: Index, offsetBy distance: Int) -> Index { elements.index(i, offsetBy: distance) }
-    public func index(_ i: Index, offsetBy distance: Int, limitedBy limit: Index) -> Index? { elements.index(i, offsetBy: distance, limitedBy: limit) }
 
     public func distance(from start: Index, to end: Index) -> Int { elements.distance(from: start, to: end) }
 }
@@ -98,8 +83,8 @@ open class PbObservableCollectionBase {
 public final class PbObservableArray<Element>: PbObservableCollectionBase, PbObservableRandomAccessCollection where Element: PbObservableObject {
     public typealias Element = Array<Element>.Element
     public typealias Index = Array<Element>.Index
-    public typealias SubSequence = Array<Element>.SubSequence
     public typealias Indices = Array<Element>.Indices
+    public typealias SubSequence = Array<Element>.SubSequence
     public typealias Iterator = IndexingIterator<[Element]>
 
     public var _elements: [Element] = []
@@ -129,8 +114,8 @@ extension PbObservableArray {
 public final class PbObservableSet<Element>: PbObservableCollectionBase, PbObservableCollection where Element: PbObservableObject, Element: Hashable {
     public typealias Element = Set<Element>.Element
     public typealias Index = Set<Element>.Index
-    public typealias SubSequence = Set<Element>.SubSequence
     public typealias Indices = Set<Element>.Indices
+    public typealias SubSequence = Set<Element>.SubSequence
     public typealias Iterator = Set<Element>.Iterator
 
     public var _elements: Set<Element> = []

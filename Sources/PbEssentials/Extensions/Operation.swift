@@ -5,12 +5,10 @@
 import Foundation
 
 extension Operation {
-    @inlinable
     open func sleep(nanoseconds duration: UInt64) throws {
         try sleep(for: TimeInterval(Double(duration) / 1_000_000_000.0))
     }
 
-    @inlinable
     open func sleep(for ti: TimeInterval) throws {
         if !sleep(for: ti, checkingCancellation: true) {
             throw CancellationError()
@@ -33,13 +31,11 @@ extension Operation {
 }
 
 extension OperationQueue {
-    @inlinable
     public static func + (left: OperationQueue, right: Foundation.Operation) -> OperationQueue {
         left.addOperation(right)
         return left
     }
 
-    @inlinable
     public static func += (left: OperationQueue, right: Foundation.Operation) {
         left.addOperation(right)
     }

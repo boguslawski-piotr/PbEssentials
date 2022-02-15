@@ -46,7 +46,8 @@ final public class PbMessages<Sender> where Sender: Identifiable {
     public func subscribe(to name: String, from sender: Sender?, using block: @escaping (Any?) -> Void) {
         subscriptions.append(
             (
-                name, sender,
+                name,
+                sender,
                 notificationCenter?.addObserver(forName: NSNotification.Name(name), object: sender, queue: .main) { msg in
                     let data = msg.userInfo?[0]
                     block(data)
@@ -64,7 +65,7 @@ final public class PbMessages<Sender> where Sender: Identifiable {
         guard !subscriptions.isEmpty else { return }
         guard !names.isEmpty else { return }
 
-        // TODO: uproscic ten ponizszy algorytm?
+        // TODO: Simplify this algorithm below!
 
         for n in 0...names.count - 1 {
             for o in 0...subscriptions.count - 1 {

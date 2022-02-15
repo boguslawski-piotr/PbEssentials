@@ -55,26 +55,9 @@ private func processItem(_ item: Any) -> Any {
 // MARK: Mockup cipher
 
 @available(*, deprecated, message: "Debug tool. Do NOT use in production code!")
-public final class PbMockupCipher: PbCipher {
-    public init() {}
-
-    private lazy var coder = JSONCoder()
-
-    public func encrypt<T>(data: T) throws -> Data where T: DataProtocol {
-        Data(data)
-    }
-
-    public func encrypt<T>(_ item: T) throws -> Data where T: Encodable {
-        try coder.encode(item)
-    }
-
-    public func decrypt<T>(data: T) throws -> Data where T: DataProtocol {
-        Data(data)
-    }
-
-    public func decrypt<T>(itemOf type: T.Type, from data: Data) throws -> T where T: Decodable {
-        try coder.decode(type, from: data)
-    }
+public struct PbMockupCipher: PbCipher {
+    public func encrypt<T>(data: T) throws -> Data where T: DataProtocol { Data(data) }
+    public func decrypt<T>(data: T) throws -> Data where T: DataProtocol { Data(data) }
 }
 
 // MARK: Async / Await helpers

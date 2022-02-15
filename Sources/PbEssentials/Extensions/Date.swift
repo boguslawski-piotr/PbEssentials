@@ -5,17 +5,14 @@
 import Foundation
 
 extension Date {
-    @inlinable
     public func asPathComponent(withMiliseconds: Bool = false) -> String {
         withMiliseconds ? "\(self.timeIntervalSinceReferenceDate)" : "\(Int64(self.timeIntervalSinceReferenceDate))"
     }
 
-    @inlinable
     public static func asPathComponent(withMiliseconds: Bool = false) -> String {
         withMiliseconds ? "\(Self.timeIntervalSinceReferenceDate)" : "\(Int64(Self.timeIntervalSinceReferenceDate))"
     }
 
-    @inlinable
     public init?(pathComponent: String) {
         if let vi = TimeInterval(pathComponent) {
             self.init(timeIntervalSinceReferenceDate: vi)
@@ -24,7 +21,6 @@ extension Date {
         }
     }
 
-    @inlinable
     public func formatted(_ date: DateFormatter.Style = .short, time: DateFormatter.Style = .none) -> String {
         let df = DateFormatter()
         df.dateStyle = date
