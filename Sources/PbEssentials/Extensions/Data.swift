@@ -17,35 +17,35 @@ extension Data {
 }
 
 extension Data {
-    public func compress(using compressor: PbCompressor) throws -> Data {
+    public func compressed(using compressor: PbCompressor) throws -> Data {
         try compressor.compress(data: self)
     }
     
-    public func decompress(using decompressor: PbDecompressor) throws -> Data {
+    public func decompressed(using decompressor: PbDecompressor) throws -> Data {
         try decompressor.decompress(data: self)
     }
 }
 
 extension Data {
-    public func encrypt(using encipher: PbEncipher) throws -> Data {
+    public func encrypted(using encipher: PbEncipher) throws -> Data {
         try encipher.encrypt(data: self)
     }
     
-    public func decrypt(using decipher: PbDecipher) throws -> Data {
+    public func decrypted(using decipher: PbDecipher) throws -> Data {
         try decipher.decrypt(data: self)
     }
 }
 
 extension Data {
-    public func decode<T: Decodable>(as type: T.Type = T.self, using decoder: PbDecoder = PropertyListCoder(encoder: nil)) throws -> T {
+    public func decoded<T: Decodable>(as type: T.Type = T.self, using decoder: PbDecoder = PropertyListCoder(encoder: nil)) throws -> T {
         try decoder.decode(T.self, from: self)
     }
 
-    public func decompress<T: Decodable>(as type: T.Type = T.self, using decompressor: PbDecompressor, decoder: PbDecoder = PropertyListCoder(encoder: nil)) throws -> T {
+    public func decompressed<T: Decodable>(as type: T.Type = T.self, using decompressor: PbDecompressor, decoder: PbDecoder = PropertyListCoder(encoder: nil)) throws -> T {
         try decoder.decode(type, from: decompressor.decompress(data: self))
     }
     
-    public func decrypt<T: Decodable>(as type: T.Type = T.self, using decipher: PbDecipher, decoder: PbDecoder = PropertyListCoder(encoder: nil)) throws -> T {
+    public func decrypted<T: Decodable>(as type: T.Type = T.self, using decipher: PbDecipher, decoder: PbDecoder = PropertyListCoder(encoder: nil)) throws -> T {
         try decoder.decode(type, from: decipher.decrypt(data: self))
     }
 }

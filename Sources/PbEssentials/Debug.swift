@@ -22,7 +22,7 @@ private func processItem(_ item: Any) -> Any {
 
     public func dbg(level: Int = 0, _ items: Any..., function: String = #function, file: String = #fileID, line: Int = #line) {
         _lock.withLock {
-            print("DBG" + (level == 0 ? "" : "\(level)") + ":", "\(file)(\(line)): \(function):", "", terminator: "")
+            print("DBG" + (level == 0 ? ":" : "\(level):"), "\(file)(\(line)): \(function):", "", terminator: "")
             items.forEach { item in print(item, "", terminator: "") }
             print(terminator: "\n")
         }
@@ -31,7 +31,7 @@ private func processItem(_ item: Any) -> Any {
     extension PbLogger {
         public static func log(level: Int = 0, _ items: Any..., function: String = #function, file: String = #fileID, line: Int = #line) {
             _lock.withLock {
-                print("LOG:", "\(file)(\(line)): \(function):", "", terminator: "")
+                print("LOG:" + (level == 0 ? ":" : "\(level):"), "\(file)(\(line)): \(function):", "", terminator: "")
                 items.forEach { item in print(processItem(item), "", terminator: "") }
                 print(terminator: "\n")
             }

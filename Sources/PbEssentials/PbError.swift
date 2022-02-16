@@ -14,8 +14,8 @@ public struct PbError: Error, LocalizedError, Codable {
     public var debugDescription: String? { description }
     public var shortDebugDescription: String? { shortDescription }
 
-    public init(_ what: String) {
-        self.when = Date()
+    public init(_ what: String, when: Date = Date()) {
+        self.when = when
         self.what = what
     }
 

@@ -281,16 +281,17 @@ open class PbOperation<T>: PbOperationBase {
 
 // MARK: UsesOperations
 
-open class UsesOperations: UsesMessages {
+open class UsesOperations: Identifiable {
+    public lazy var operationQueue1 = operationQueueWithUpTo(threads: 1)
+    public lazy var operationQueue = OperationQueue()
+    public lazy var messages = PbMessages(self)
+    
     open func operationQueueWithUpTo(threads: Int) -> OperationQueue {
         let oq = OperationQueue()
         oq.maxConcurrentOperationCount = threads
         return oq
     }
-
-    public lazy var operationQueue1 = operationQueueWithUpTo(threads: 1)
-    public lazy var operationQueue = OperationQueue()
-
+    
     open func operation<T>() -> PbOperation<T> {
         return PbOperation<T>(for: self)
     }

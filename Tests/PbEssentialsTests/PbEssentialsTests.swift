@@ -12,10 +12,10 @@ final class PbEssentialsTests: XCTestCase {
         let secret = "This is a very sensitive message ;)"
 
         let ekey = try PbSimpleCipher.makeKey(using: password)
-        let encryptedSecret = try secret.encrypt(using: PbSimpleCipher(ekey))
+        let encryptedSecret = try secret.encrypted(using: PbSimpleCipher(ekey))
 
         let dkey = try PbSimpleCipher.makeKey(using: password)
-        let decryptedSecret = try encryptedSecret.decrypt(as: String.self, using: PbSimpleCipher(dkey))
+        let decryptedSecret = try encryptedSecret.decrypted(as: String.self, using: PbSimpleCipher(dkey))
 
         dbg(decryptedSecret, "==", secret)
         XCTAssert(decryptedSecret == secret)
@@ -42,8 +42,8 @@ final class PbEssentialsTests: XCTestCase {
         XCTAssert(destinationData == sourceData)
         XCTAssert(String(data: destinationData, encoding: .utf8) == sourceString)
 
-        let cdata1 = try sourceString.compress(using: compressorDecompressor)
-        let destinationString = try cdata1.decompress(as: String.self, using: compressorDecompressor)
+        let cdata1 = try sourceString.compressed(using: compressorDecompressor)
+        let destinationString = try cdata1.decompressed(as: String.self, using: compressorDecompressor)
         
         dbg(destinationString)
         XCTAssert(destinationString == sourceString)

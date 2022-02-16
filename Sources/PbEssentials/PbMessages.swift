@@ -82,26 +82,3 @@ final public class PbMessages<Sender> where Sender: Identifiable {
         subscriptions.removeAll(where: { $0.observer == nil })
     }
 }
-
-open class UsesMessages: Identifiable, Equatable {
-    public let id: UUID
-
-    public init() {
-        self.id = UUID()
-    }
-
-    public init(with id: UUID) {
-        self.id = id
-    }
-
-    public init(basedOn obj: UsesMessages) {
-        self.id = obj.id
-    }
-
-    public static func == (lhs: UsesMessages, rhs: UsesMessages) -> Bool {
-        lhs.id == rhs.id
-    }
-
-    open lazy var messages = PbMessages(self)
-    open lazy var localMessages = PbMessages(self, notificationCenter: NotificationCenter())
-}
