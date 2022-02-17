@@ -17,3 +17,31 @@ public protocol ThrowingIteratorProtocol {
     /// Advances to the next element and returns it, or `nil` if no next element exists.
     mutating func nextThrows() throws -> Self.Element?
 }
+
+// MARK: Non Optional Dictionary
+
+// TODO: make it a Collection
+
+public struct KeyValue<Key, Value> where Key: Hashable {
+    public var elements: [Key: Value] = [:]
+    public let `default`: Value
+    
+    public init(default value: Value) {
+        self.`default` = value
+    }
+    
+    public subscript(key: Key) -> Value {
+        get {
+            return elements[key] ?? `default`
+        }
+        set {
+            elements[key] = newValue
+        }
+    }
+}
+
+extension KeyValue: Equatable where Value: Equatable {}
+extension KeyValue: Hashable where Value: Hashable {}
+
+extension KeyValue: Encodable where Key: Encodable, Value: Encodable {}
+extension KeyValue: Decodable where Key: Decodable, Value: Decodable {}
