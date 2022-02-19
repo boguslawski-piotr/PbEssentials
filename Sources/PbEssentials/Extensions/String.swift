@@ -15,3 +15,13 @@ extension String {
         return nom > 0
     }
 }
+
+extension String {
+    public func replacingVariables(with vars: String...) -> String {
+        var result = self
+        for (i, `var`) in vars.enumerated() {
+            result = result.replacingOccurrences(of: "$\(i)", with: `var`)
+        }
+        return result
+    }
+}
