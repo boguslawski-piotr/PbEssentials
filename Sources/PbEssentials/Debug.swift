@@ -27,7 +27,7 @@ private func processItem(_ item: Any) -> Any {
             print(terminator: "\n")
         }
     }
-
+    
     extension PbLogger {
         public static func log(level: Int = 0, _ items: Any..., function: String = #function, file: String = #fileID, line: Int = #line) {
             _lock.withLock {
