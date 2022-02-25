@@ -5,6 +5,15 @@
 import Foundation
 
 public struct PbError: Error, LocalizedError, Codable {
+    public enum CodingKeys: String, CodingKey {
+        case when
+        case what
+    }
+
+    public let when: Date
+    public let what: String
+    public var error: Error?
+
     public var description: String { return "\(when.formatted(.short, time: .medium)): \(what)" }
     public var shortDescription: String { return "\(what)" }
     public var errorDescription: String? { description }
@@ -31,13 +40,4 @@ public struct PbError: Error, LocalizedError, Codable {
             self.error = error
         }
     }
-
-    public enum CodingKeys: String, CodingKey {
-        case when
-        case what
-    }
-
-    private let when: Date
-    private let what: String
-    private var error: Error?
 }
