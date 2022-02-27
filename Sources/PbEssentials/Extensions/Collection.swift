@@ -45,3 +45,28 @@ extension KeyValue: Hashable where Value: Hashable {}
 
 extension KeyValue: Encodable where Key: Encodable, Value: Encodable {}
 extension KeyValue: Decodable where Key: Decodable, Value: Decodable {}
+
+// MARK: Set
+
+public extension Set {
+    mutating func removeAll(where shouldBeRemoved: (Element) throws -> Bool) rethrows {
+        while let element = try first(where: shouldBeRemoved) {
+            remove(element)
+        }
+    }
+    
+    mutating func replaceAll(where shouldBeReplaced: (Element) throws -> Bool, with replacement: Element) rethrows {
+        while let element = try first(where: shouldBeReplaced) {
+            remove(element)
+            insert(replacement)
+        }
+    }
+
+    mutating func replaceAll(where shouldBeReplaced: (Element) throws -> Bool, with replacement: (Element) throws -> Element) rethrows {
+        while let element = try first(where: shouldBeReplaced) {
+            remove(element)
+            insert(try replacement(element))
+        }
+    }
+}
+
