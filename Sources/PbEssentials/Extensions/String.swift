@@ -2,7 +2,7 @@ import Foundation
 
 extension String {
     public func asPathComponent() -> String {
-        return self.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-")
+        return self.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: "\\", with: "-").replacingOccurrences(of: ":", with: "-")
     }
 }
 
