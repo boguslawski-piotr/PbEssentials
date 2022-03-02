@@ -19,6 +19,8 @@ extension PbObservableObject where Self.ObjectWillChangePublisher == ObservableO
     public var objectWillChange: ObservableObjectPublisher { observableObjectPublisher(type: .will) }
     public var objectDidChange: ObservableObjectPublisher { observableObjectPublisher(type: .did) }
     
+    /// Releases publishers objects from global cache. This functions should be called from `deinit` in objects that
+    /// conforms to `PbObservableObject` and do not have any properties that conforms to `PbPublishedProperty` protocol.
     public func releasePublishers() {
         Storage.shared.release(id)
     }
@@ -70,11 +72,10 @@ open class PbObservableObjectBase: PbObservableObject {
 extension PbObservableObject where Self.ObjectWillChangePublisher == ObservableObjectPublisher, Self.ObjectDidChangePublisher == ObservableObjectPublisher
 {
     fileprivate func observableObjectPublisher(type: Storage.PublisherType) -> ObservableObjectPublisher {
-        // Simple concept:
-        // If object has no properties marked with @PbPublished then return publisher from global cache
-        // else:
-        //   - first call: visit all properties marked with @PbPublished and install new, not stored in cache, publisher
-        //   - next calls: return publisher from first property (properties cannot be deleted or created at runtime)
+        // If object has no properties that conforms to `PbPublishedProperty` protocol then return publisher from global cache.
+        // Else:
+        //   - first call: visit all properties that conforms to `PbPublishedProperty` protocol and install new, not stored in cache, publisher
+        //   - next calls: return publisher from first property (properties cannot be deleted or created at runtime).
         var publisher: ObservableObjectPublisher?
         var reflection: Mirror? = Mirror(reflecting: self)
         while let aClass = reflection {
