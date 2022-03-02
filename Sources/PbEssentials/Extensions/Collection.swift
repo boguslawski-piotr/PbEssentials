@@ -2,6 +2,8 @@
 /// Copyright (c) Piotr Boguslawski
 /// MIT license, see License.md file for details.
 
+// MARK: Protocols
+
 public protocol ErrorReportingIteratorProtocol: IteratorProtocol {
     var lastError: Error? { get }
 }
@@ -18,34 +20,6 @@ public protocol ThrowingIteratorProtocol {
     mutating func nextThrows() throws -> Self.Element?
 }
 
-// MARK: Non Optional Dictionary
-
-// TODO: make it a Collection
-
-public struct KeyValue<Key, Value> where Key: Hashable {
-    public var elements: [Key: Value] = [:]
-    public let `default`: Value
-    
-    public init(default value: Value) {
-        self.`default` = value
-    }
-    
-    public subscript(key: Key) -> Value {
-        get {
-            return elements[key] ?? `default`
-        }
-        set {
-            elements[key] = newValue
-        }
-    }
-}
-
-extension KeyValue: Equatable where Value: Equatable {}
-extension KeyValue: Hashable where Value: Hashable {}
-
-extension KeyValue: Encodable where Key: Encodable, Value: Encodable {}
-extension KeyValue: Decodable where Key: Decodable, Value: Decodable {}
-
 // MARK: Set
 
 public extension Set {
@@ -55,13 +29,6 @@ public extension Set {
         }
     }
     
-    mutating func replaceAll(where shouldBeReplaced: (Element) throws -> Bool, with replacement: Element) rethrows {
-        while let element = try first(where: shouldBeReplaced) {
-            remove(element)
-            insert(replacement)
-        }
-    }
-
     mutating func replaceAll(where shouldBeReplaced: (Element) throws -> Bool, with replacement: (Element) throws -> Element) rethrows {
         while let element = try first(where: shouldBeReplaced) {
             remove(element)
@@ -70,3 +37,13 @@ public extension Set {
     }
 }
 
+// MARK: Dictionary
+
+public extension Dictionary {
+    @discardableResult
+    mutating func moveValue(fromKey: Key, toKey: Key) -> Value? {
+        self[toKey] = self[fromKey]
+        self.removeValue(forKey: fromKey)
+        return self[toKey]
+    }
+}
