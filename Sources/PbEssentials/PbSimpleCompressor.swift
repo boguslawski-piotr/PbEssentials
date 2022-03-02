@@ -5,7 +5,11 @@
 import Compression
 import Foundation
 
-public struct PbSimpleCompressorDecompressor: PbCompressorDecompressor {
+public enum PbCompression {
+    case fast, strong
+}
+
+public struct PbSimpleCompressor: PbCompressor, PbDecompressor {
     public var compression: PbCompression
     public var pageSize: Int
 

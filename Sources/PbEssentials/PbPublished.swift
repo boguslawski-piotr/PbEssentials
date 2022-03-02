@@ -11,7 +11,7 @@ import Foundation
 /// but should never be initialized. Their initialization will take place automatically from
 /// the parent object (if it's an object that conforms to PbObservableObject).
 public protocol PbPublishedProperty {
-    /// Publisher for `willSet` events, in the parent observable object
+    /// Publisher for `willSet` events, in the parent observable object.
     var _objectWillChange: ObservableObjectPublisher? { get nonmutating set }
 
     /// Publisher for `didSet` events, in the parent observable object.
@@ -92,7 +92,13 @@ public final class PbPublished<Value>: PbPublishedProperty {
     }
 }
 
-extension PbPublished: Codable where Value: Codable {
+extension PbPublished: Encodable where Value: Encodable {
+    public func encode(to encoder: Encoder) throws {
+        try value.encode(to: encoder)
+    }
+}
+
+extension PbPublished: Decodable where Value: Decodable {
     public convenience init(from decoder: Decoder) throws {
         let value = try Value(from: decoder)
         self.init(wrappedValue: value)
@@ -105,9 +111,5 @@ extension PbPublished: Codable where Value: Codable {
             }
             valueDidSet!()
         }
-    }
-
-    public func encode(to encoder: Encoder) throws where Value: Codable {
-        try value.encode(to: encoder)
     }
 }

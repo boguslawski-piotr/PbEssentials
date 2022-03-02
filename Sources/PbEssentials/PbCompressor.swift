@@ -27,9 +27,3 @@ public extension PbDecompressor {
         try decoder.decode(type, from: try decompress(data: data))
     }
 }
-
-public protocol PbCompressorDecompressor: PbCompressor & PbDecompressor {}
-
-public enum PbCompression {
-    case fast, strong
-}
