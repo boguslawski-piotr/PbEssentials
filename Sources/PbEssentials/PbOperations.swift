@@ -17,14 +17,14 @@ open class PbOperationBase: BlockOperation, Identifiable {
         static let executeFinishedWhenAllBlocksAreFinished = Options(rawValue: 1 << 0)
     }
 
-    public let id = String(UUID().uuidString)
-    public let sender: UsesOperations
+    public let launcher: UsesOperations
     public var options: Options = []
-
+    public var stringId: String { String(id.hashValue) }
+    
     public init(for sender: UsesOperations) {
-        self.sender = sender
+        self.launcher = sender
         super.init()
-        name = id
+        name = stringId
     }
 }
 
@@ -46,7 +46,7 @@ open class PbOperation<T>: PbOperationBase {
 
     open func canStart() {
         guard canStartCode != nil else { return }
-        sender.execute {
+        launcher.execute {
             if !(self.canStartCode?(self) ?? true) {
                 self.cancel()
             }
@@ -67,7 +67,7 @@ open class PbOperation<T>: PbOperationBase {
     private var cleanupCode: ((_ op: PbOperation) -> Void)? = nil
 
     open func cleanup() {
-        sender.execute {
+        launcher.execute {
             self.cleanupCode?(self)
             self.deInit()
         }
@@ -150,19 +150,19 @@ open class PbOperation<T>: PbOperationBase {
     }
 
     open func execute(_ name: String, code: @escaping () throws -> Void) {
-        sender.messages.read(name) { _ in
+        launcher.messages.read(name) { _ in
             do {
                 try code()
             } catch {
                 self.executeThrown((name, error))
             }
         }
-        sender.messages.send(name, data: nil)
+        launcher.messages.send(name, data: nil)
     }
 
     open func execute(_ name: String, data: Any? = nil) {
         assert(methods.contains(name))
-        sender.messages.send(name + id, data: data)
+        launcher.messages.send(name + stringId, data: data)
     }
 
     public func method(_ name: String, code: @escaping () throws -> Void) -> PbOperation {
@@ -172,7 +172,7 @@ open class PbOperation<T>: PbOperationBase {
     open func method<T>(_ name: String, code: @escaping (T) throws -> Void) -> PbOperation {
         assert(!methods.contains(name))
         if methods.insert(name).inserted {
-            sender.messages.subscribe(to: name + id) { data in
+            launcher.messages.subscribe(to: name + stringId) { data in
                 do {
                     try code(data as! T)
                 } catch {
@@ -183,7 +183,7 @@ open class PbOperation<T>: PbOperationBase {
         return self
     }
 
-    private lazy var executeFinished = "finished" + id
+    private lazy var executeFinished = "finished" + stringId
     private var finishedBlocks = 0
 
     private func executeFinished(_ result: Result?) {
@@ -192,12 +192,12 @@ open class PbOperation<T>: PbOperationBase {
                 results.append(result!)
             }
             if finishedBlocks > 0 && !options.contains(.executeFinishedWhenAllBlocksAreFinished) {
-                sender.messages.send(executeFinished, data: result)
+                launcher.messages.send(executeFinished, data: result)
             }
         } else {
             if finishedBlocks > 0 && options.contains(.executeFinishedWhenAllBlocksAreFinished) {
                 for result in results {
-                    sender.messages.send(executeFinished, data: result)
+                    launcher.messages.send(executeFinished, data: result)
                 }
             }
 
@@ -213,7 +213,7 @@ open class PbOperation<T>: PbOperationBase {
     }
 
     open func finished(code: @escaping (String, T) -> Void) -> PbOperation {
-        sender.messages.subscribe(to: executeFinished) { data in
+        launcher.messages.subscribe(to: executeFinished) { data in
             let data = data as! Result
             code(data.name, data.result)
         }
@@ -221,12 +221,12 @@ open class PbOperation<T>: PbOperationBase {
         return self
     }
 
-    private lazy var executeThrown = "thrown" + id
+    private lazy var executeThrown = "thrown" + stringId
     private var thrownBlocks = 0
 
     private func executeThrown(_ data: Exception) {
         guard thrownBlocks > 0 else { return }
-        sender.messages.send(executeThrown, data: data)
+        launcher.messages.send(executeThrown, data: data)
     }
 
     public func thrown(code: @escaping (Error) -> Void) -> PbOperation {
@@ -234,7 +234,7 @@ open class PbOperation<T>: PbOperationBase {
     }
 
     open func thrown(code: @escaping (String, Error) -> Void) -> PbOperation {
-        sender.messages.subscribe(to: executeThrown) { data in
+        launcher.messages.subscribe(to: executeThrown) { data in
             let data = data as! Exception
             code(data.name, data.error)
         }
@@ -265,11 +265,11 @@ open class PbOperation<T>: PbOperationBase {
     }
 
     open func deInit() {
-        sender.messages.cancelSubscriptions(for: [executeFinished, executeThrown])
+        launcher.messages.cancelSubscriptions(for: [executeFinished, executeThrown])
         finishedBlocks = 0
         thrownBlocks = 0
         if methods.count > 0 {
-            sender.messages.cancelSubscriptions(for: methods.compactMap({ return $0 + id }))
+            launcher.messages.cancelSubscriptions(for: methods.compactMap({ return $0 + stringId }))
             methods = []
         }
     }

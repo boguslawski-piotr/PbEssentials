@@ -20,7 +20,7 @@ public struct PbSimpleCipher: PbCipher {
 
     public typealias SymmetricKey = CryptoKit.SymmetricKey
 
-    public let key: SymmetricKey
+    private let key: SymmetricKey
 
     public init(_ key: SymmetricKey) {
         self.key = key

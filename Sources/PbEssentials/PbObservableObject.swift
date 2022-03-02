@@ -31,12 +31,14 @@ public protocol PbObservableObjectType: AnyObject {
     var objectDidChange: ObservableObjectPublisher { get }
 }
 
-/// Base class for observable objects that may wish to retransmit changes from other observable objects.
+/// Base class for observable objects that may wish to retransmit / resend changes from other observable objects.
 open class PbObservableObjectBase: PbObservableObject {
     public lazy var _subscriptions: [AnyCancellable?] = []
     public lazy var _lock = NSRecursiveLock()
     
-    open func subscribe<Value: PbObservableObject>(to value: Value) {
+    public init() {}
+    
+    open func resendChanges<Value: PbObservableObject>(in value: Value) {
         _lock.lock()
         defer { _lock.unlock() }
         _subscriptions.append(value.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() })
@@ -50,11 +52,12 @@ open class PbObservableObjectBase: PbObservableObject {
             $0.element?.cancel()
             _subscriptions[$0.offset] = nil
         }
-        _subscriptions.removeAll()
+        _subscriptions.removeAll(keepingCapacity: true)
     }
     
     deinit {
         cancelSubscriptions()
+        Storage.shared.release(id)
     }
 }
 
@@ -116,5 +119,11 @@ private class Storage {
             }
         }
         return publisher!
+    }
+    
+    func release(_ id: ObjectIdentifier) {
+        $publishers.withLock {
+            publishers[id] = nil
+        }
     }
 }

@@ -7,9 +7,9 @@ import Foundation
 
 /// A property that can report changes to the parent.
 ///
-/// The properties `_objectWillChange` and `_objectDidChange`should be declared
-/// but should never be initialized. Their initialization will take place automatically from
-/// the parent object (if it's an object that conforms to PbObservableObject).
+/// The properties `_objectWillChange` and `_objectDidChange`should be declared but
+/// should never be initialized. Their initialization will take place automatically
+/// from the parent object if it's an object that conforms to PbObservableObject.
 public protocol PbPublishedProperty {
     /// Publisher for `willSet` events, in the parent observable object.
     var _objectWillChange: ObservableObjectPublisher? { get nonmutating set }

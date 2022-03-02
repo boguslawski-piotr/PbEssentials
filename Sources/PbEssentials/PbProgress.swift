@@ -61,7 +61,7 @@ public struct PbSimpleProgress: PbProgress {
     }
 }
 
-public class PbObservableProgress: PbProgress, PbObservableObject {
+public class PbObservableProgress: PbObservableObjectBase, PbProgress {
     @PbPublished public var total: Int = 0
     @PbPublished public var completed: Int = 0
     @PbPublished public var description: String = ""
@@ -79,21 +79,12 @@ public class PbObservableProgress: PbProgress, PbObservableObject {
 
     @discardableResult
     public func onChange(action: @escaping () -> Void) -> Self {
-        subscriptions.append(
+        _subscriptions.append(
             objectWillChange
                 .sink {
                     action()
                 }
         )
         return self
-    }
-
-    private var subscriptions: [AnyCancellable?] = []
-
-    deinit {
-        subscriptions.enumerated().forEach {
-            $0.element?.cancel()
-            subscriptions[$0.offset] = nil
-        }
     }
 }
