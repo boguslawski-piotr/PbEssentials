@@ -18,6 +18,10 @@ extension PbObservableObject where Self.ObjectWillChangePublisher == ObservableO
 {
     public var objectWillChange: ObservableObjectPublisher { observableObjectPublisher(type: .will) }
     public var objectDidChange: ObservableObjectPublisher { observableObjectPublisher(type: .did) }
+    
+    public func releasePublishers() {
+        Storage.shared.release(id)
+    }
 }
 
 /// Protocol that you can use to recognize objects that conforms to PbObservableObject in runtime.
