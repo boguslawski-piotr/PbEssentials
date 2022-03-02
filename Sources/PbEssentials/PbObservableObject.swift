@@ -3,17 +3,7 @@
 /// MIT license, see License.md file for details.
 
 import Combine
-
-/// Protocol that you can use to recognize objects that conforms to PbObservableObject in runtime.
-/// It doesn't have the associated type and can be used as a type :) in code like this:
-///
-///     if let obj = obj as? PbObservableObjectType {
-///         objectWillChange.sink { ... }
-///     }
-public protocol PbObservableObjectType: AnyObject {
-    var objectWillChange: ObservableObjectPublisher { get }
-    var objectDidChange: ObservableObjectPublisher { get }
-}
+import Foundation
 
 /// A type of object with a publishers that emits before and after the object has changed.
 public protocol PbObservableObject: ObservableObject, PbObservableObjectType, Identifiable {
@@ -28,6 +18,44 @@ extension PbObservableObject where Self.ObjectWillChangePublisher == ObservableO
 {
     public var objectWillChange: ObservableObjectPublisher { observableObjectPublisher(type: .will) }
     public var objectDidChange: ObservableObjectPublisher { observableObjectPublisher(type: .did) }
+}
+
+/// Protocol that you can use to recognize objects that conforms to PbObservableObject in runtime.
+/// It doesn't have the associated type and can be used as a type :) in code like this:
+///
+///     if let obj = obj as? PbObservableObjectType {
+///         objectWillChange.sink { ... }
+///     }
+public protocol PbObservableObjectType: AnyObject {
+    var objectWillChange: ObservableObjectPublisher { get }
+    var objectDidChange: ObservableObjectPublisher { get }
+}
+
+/// Base class for observable objects that may wish to retransmit changes from other observable objects.
+open class PbObservableObjectBase: PbObservableObject {
+    public lazy var _subscriptions: [AnyCancellable?] = []
+    public lazy var _lock = NSRecursiveLock()
+    
+    open func subscribe<Value: PbObservableObject>(to value: Value) {
+        _lock.lock()
+        defer { _lock.unlock() }
+        _subscriptions.append(value.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() })
+        _subscriptions.append(value.objectDidChange.sink { [weak self] _ in self?.objectDidChange.send() })
+    }
+    
+    open func cancelSubscriptions() {
+        _lock.lock()
+        defer { _lock.unlock() }
+        _subscriptions.enumerated().forEach {
+            $0.element?.cancel()
+            _subscriptions[$0.offset] = nil
+        }
+        _subscriptions.removeAll()
+    }
+    
+    deinit {
+        cancelSubscriptions()
+    }
 }
 
 // MARK: Private implementation

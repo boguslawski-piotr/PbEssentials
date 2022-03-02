@@ -22,7 +22,7 @@ final class PbEssentialsTests: XCTestCase {
     }
 
     func testPbSimpleCompressorDecompressor() throws {
-        let compressorDecompressor = PbSimpleCompressorDecompressor(compression: .fast)
+        let compressorDecompressor = PbSimpleCompressor(compression: .fast)
 
         let sourceString =
             """
@@ -117,3 +117,48 @@ final class PbObservableObjectPbPublishedTests: XCTestCase {
         XCTAssert(test)
     }
 }
+
+// MARK:
+
+final class PbObservableTests: XCTestCase {
+    var c1, c2, c3, c4: AnyCancellable?
+    
+    class Cos: PbObservableObject {
+        @PbPublished var test = 1
+    }
+
+    func test1() {
+        @PbObservableCollection var arr: [Cos] = []
+        var changes = 0
+        
+        c1 = _arr.objectWillChange
+            .sink {
+                dbg("changed")
+                changes += 1
+            }
+        
+        arr.append(Cos())
+        arr[0].test = 2
+        arr.remove(at: 0)
+        
+        XCTAssert(changes == 3)
+    }
+
+    func test2() {
+        @PbObservableDictionary var dict: [Int : Cos] = [:]
+        var changes = 0
+        
+        c1 = _dict.objectWillChange
+            .sink {
+                dbg("changed")
+                changes += 1
+            }
+        
+        dict[1] = Cos()
+        dict[1]?.test = 2
+        dict.removeValue(forKey: 1)
+        
+        XCTAssert(changes == 3)
+    }
+}
+
